@@ -33,6 +33,8 @@ Saved games ("parties") live in `localStorage` under the key `majhong_parties_v1
 
 The app is installable as a PWA: `maj-jong/manifest.webmanifest` declares the icons (`maj-jong/icons/`) and display mode, and `maj-jong/sw.js` is a minimal cache-first service worker registered from `index.html`. The "Installer l'app" button in the header only appears when the browser fires `beforeinstallprompt` (desktop/Android Chrome-family browsers); iOS Safari has no such event and relies on the manual "Add to Home Screen" share-sheet action instead, using the same manifest/icons.
 
+Because the service worker is cache-first, **bump `CACHE_NAME` in `sw.js` any time a cached asset changes** (`index.html`, the manifest, or any icon) — otherwise previously-installed clients keep serving the stale cached version indefinitely, even after a new deploy.
+
 ### Re-render pattern
 
 There's no reactive framework: any state mutation is followed by manually calling the relevant `render*()`/`update*()` functions (commonly bundled via `initGame()`, which re-renders everything). When adding a new state field or control, follow this same pattern — mutate `gameState`/`currentCalcState`, then call the render functions for whatever UI depends on it.
