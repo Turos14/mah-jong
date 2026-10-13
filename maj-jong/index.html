@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi & Calcul de Scores Maj-hong</title>
+    <!-- Tailwind CSS pour un design haut de gamme -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js pour le graphique d'évolution -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121824;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+
+<body class="text-slate-100 min-h-screen">
+
+    <!-- En-tête principal -->
+    <header class="border-b border-emerald-900 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+
+            <div class="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+                <!-- Lien Retour au Portail -->
+                <a href="https://apps.home.ithasu.org/"
+                    class="flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition-all duration-200 bg-slate-800/80 hover:bg-slate-800 px-3 py-2 rounded-lg border border-slate-700/60 shadow-sm">
+                    <span>←</span> Retour au portail
+                </a>
+
+                <div class="flex items-center gap-3">
+                    <div
+                        class="bg-emerald-600 text-slate-950 p-2.5 rounded-xl font-bold text-xl tracking-wider shadow-lg shadow-emerald-900/20">
+                        🀄
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-emerald-400">Maj-hong Score Master</h1>
+                        <p class="text-xs text-slate-400">Règles traditionnelles multi-joueurs</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglets Principaux -->
+            <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700 w-full sm:w-auto">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard"
+                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-emerald-600 text-slate-950">
+                    Partie & Graphique
+                </button>
+                <button onclick="switchTab('calculator')" id="tab-calculator"
+                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
+                    Calculateur de Manche
+                </button>
+                <button onclick="switchTab('parties')" id="tab-parties"
+                    class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
+                    Mes Parties
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+
+        <!-- VUE DASHBOARD (PARTIE & GRAPHIQUE) -->
+        <div id="view-dashboard" class="space-y-8">
+            <!-- Configuration de la table -->
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                            <span>👥</span> Configuration des Joueurs
+                        </h2>
+                        <p class="text-sm text-slate-400 mt-1">Configurez les noms et ajustez les jetons de départ.</p>
+                        <p id="current-party-label" class="text-xs text-emerald-400 mt-1 font-medium">Partie non sauvegardée</p>
+                    </div>
+                    <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+                        <div
+                            class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                            <span class="text-xs text-slate-400">Nombre de Joueurs :</span>
+                            <select id="player-count"
+                                class="bg-transparent text-emerald-400 font-semibold focus:outline-none cursor-pointer"
+                                onchange="updatePlayerCount(this.value)">
+                                <option value="2">2 joueurs</option>
+                                <option value="3">3 joueurs</option>
+                                <option value="4" selected>4 joueurs</option>
+                            </select>
+                        </div>
+                        <div
+                            class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                            <span class="text-xs text-slate-400">Jetons initiaux :</span>
+                            <input type="number" id="start-points" value="0" step="100"
+                                class="bg-transparent text-emerald-400 font-semibold w-20 focus:outline-none"
+                                onchange="updateStartingPoints(this.value)">
+                        </div>
+                        <div class="flex gap-3 ml-auto flex-wrap">
+                            <button onclick="openSaveModal()"
+                                class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                                💾 Sauvegarder
+                            </button>
+                            <div class="relative">
+                                <button onclick="toggleLoadMenu(event)"
+                                    class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                                    📂 Charger
+                                </button>
+                                <div id="load-menu"
+                                    class="hidden absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto p-2 space-y-1">
+                                </div>
+                            </div>
+                            <button onclick="resetGame()"
+                                class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                                Réinitialiser la partie
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="player-inputs-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                </div>
+            </section>
+
+            <!-- Classement & Graphique -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div
+                    class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-6">
+                            <span>🏆</span> Classement Actuel
+                        </h2>
+                        <div id="leaderboard-container" class="space-y-4"></div>
+                    </div>
+                    <button onclick="switchTab('calculator')"
+                        class="mt-6 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold px-6 py-3 rounded-xl shadow-lg transition duration-200 w-full">
+                        🧮 Enregistrer les scores
+                    </button>
+                </div>
+                <div
+                    class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4">
+                        <span>📈</span> Évolution des Points
+                    </h2>
+                    <div class="flex-1 relative min-h-[280px]"><canvas id="progressionChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Historique des Manches -->
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>📜</span> Historique
+                        des Manches</h2>
+                    <span id="rounds-count"
+                        class="bg-slate-800 text-xs text-slate-400 px-3 py-1 rounded-full font-semibold">0 manche</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-sm">
+                                <th class="py-3 px-4">Manche</th>
+                                <th class="py-3 px-4">Est (Banque)</th>
+                                <th class="py-3 px-4">Gagnant</th>
+                                <th class="py-3 px-4">Type Victoire</th>
+                                <th class="py-3 px-4 text-center">Impacts sur les Scores</th>
+                                <th class="py-3 px-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rounds-history-body" class="divide-y divide-slate-800 text-sm"></tbody>
+                    </table>
+                    <div id="no-rounds-message" class="text-center py-8 text-slate-500">Aucune manche enregistrée.</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VUE CALCULATEUR DE MANCHE MULTI-JOUEURS -->
+        <div id="view-calculator" class="hidden space-y-6">
+
+            <!-- Sélections globales de contexte de manche -->
+            <div
+                class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Vent d'Est
+                        (Banquier)</label>
+                    <select id="calc-est"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        onchange="updateCalculations()"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Gagnant
+                        (Mah-Jong)</label>
+                    <select id="calc-winner"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        onchange="handleWinnerChange()"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Méthode de
+                        Victoire</label>
+                    <select id="calc-method"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        onchange="handleMethodChange()">
+                        <option value="tsumo">Tsumo (Pioche du mur)</option>
+                        <option value="ron">Ron (Sur une défausse)</option>
+                    </select>
+                </div>
+                <div id="calc-discarder-container" class="hidden">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Qui a
+                        défaussé ?</label>
+                    <select id="calc-discarder"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                        onchange="updateCalculations()"></select>
+                </div>
+            </div>
+
+            <!-- Sous-onglets de sélection de la main du joueur -->
+            <div class="flex bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 overflow-x-auto gap-1"
+                id="player-subtabs-container"></div>
+
+            <!-- Structure centrale : Matrice de saisie + Panneau récapitulatif -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- Formulaire dynamique -->
+                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h3 class="text-base font-bold text-emerald-400" id="calc-current-player-title">Grille
+                            d'évaluation</h3>
+                        <span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-md"
+                            id="calc-player-status-badge">Non-gagnant</span>
+                    </div>
+
+                    <!-- Grille générée en JS -->
+                    <div id="matrix-inputs-grid" class="space-y-6"></div>
+                </div>
+
+                <!-- Panneau latéral de synthèse -->
+                <div class="space-y-6">
+                    <div
+                        class="bg-gradient-to-br from-slate-900 to-emerald-950 border border-emerald-900/50 rounded-2xl p-6 shadow-xl space-y-4">
+                        <h3
+                            class="text-xs font-semibold uppercase tracking-wider text-emerald-400 text-center tracking-widest">
+                            Bilan de la Donne</h3>
+
+                        <div class="divide-y divide-slate-800/60 text-sm space-y-3 pt-2" id="side-summary-balances">
+                            <!-- Rempli en temps réel -->
+                        </div>
+
+                        <hr class="border-slate-800 my-4">
+                        <button onclick="saveCalculatedRound()"
+                            class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-4 rounded-xl shadow-lg transition duration-200">
+                            💾 Enregistrer la Manche
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VUE MES PARTIES -->
+        <div id="view-parties" class="hidden space-y-6">
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>🗂️</span> Mes
+                            Parties</h2>
+                        <p class="text-sm text-slate-400 mt-1">Créez, chargez ou supprimez vos parties sauvegardées
+                            sur cet appareil.</p>
+                    </div>
+                    <button onclick="openCreatePartyModal()"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold px-4 py-2.5 rounded-xl shadow-lg transition duration-200 whitespace-nowrap">
+                        ➕ Nouvelle partie
+                    </button>
+                </div>
+                <div id="parties-list-container" class="space-y-3"></div>
+                <div id="no-parties-message" class="hidden text-center py-8 text-slate-500">Aucune partie
+                    sauvegardée pour le moment.</div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal de nommage (Sauvegarde / Nouvelle Partie) -->
+    <div id="name-modal"
+        class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+            <h3 id="name-modal-title" class="text-lg font-semibold text-emerald-400">Sauvegarder la partie</h3>
+            <input id="name-modal-input" type="text" placeholder="Nom de la partie"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                onkeydown="if(event.key==='Enter') confirmNameModal()">
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeNameModal()"
+                    class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">Annuler</button>
+                <button onclick="confirmNameModal()"
+                    class="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950 transition">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- BASE DE DONNÉES DE LA MATRICE VERBATIM ---
+        const MATRIX_SCHEMA = {
+            base: [
+                { id: 'paire_vent_j', label: 'Paire de Vent du Joueur', value: 2 },
+                { id: 'paire_vent_d', label: 'Paire de Vent Dominant', value: 2 },
+                { id: 'paire_dragons', label: 'Paire de Dragons', value: 2 },
+                { id: 'pung_28_exp', label: 'Pung de 2 à 8 (Exposé)', value: 2 },
+                { id: 'pung_28_cah', label: 'Pung de 2 à 8 (Caché)', value: 4 },
+                { id: 'pung_19_exp', label: 'Pung de 1 ou 9 (Exposé)', value: 4 },
+                { id: 'pung_19_cah', label: 'Pung de 1 ou 9 (Caché)', value: 8 },
+                { id: 'pung_vents_exp', label: 'Pung de Vents (Exposé)', value: 4 },
+                { id: 'pung_vents_cah', label: 'Pung de Vents (Caché)', value: 8 },
+                { id: 'pung_drag_exp', label: 'Pung de Dragons (Exposé)', value: 4 },
+                { id: 'pung_drag_cah', label: 'Pung de Dragons (Caché)', value: 8 },
+                { id: 'kong_28_exp', label: 'Kong de 2 à 8 (Exposé)', value: 8 },
+                { id: 'kong_28_cah', label: 'Kong de 2 à 8 (Caché)', value: 16 },
+                { id: 'kong_19_exp', label: 'Kong de 1 ou 9 (Exposé)', value: 16 },
+                { id: 'kong_19_cah', label: 'Kong de 1 ou 9 (Caché)', value: 32 },
+                { id: 'kong_vents_exp', label: 'Kong de Vents (Exposé)', value: 16 },
+                { id: 'kong_vents_cah', label: 'Kong de Vents (Caché)', value: 32 },
+                { id: 'kong_drag_exp', label: 'Kong de Dragons (Exposé)', value: 16 },
+                { id: 'kong_drag_cah', label: 'Kong de Dragons (Caché)', value: 32 },
+                { id: 'fleurs', label: '🌸 Fleur ou Saison', value: 4 }
+            ],
+            multipliers: [
+                { id: 'coef_vent_j', label: 'Combinaison de vent du joueur', dbl: 1 },
+                { id: 'coef_vent_d', label: 'Combinaison de vent dominant', dbl: 1 },
+                { id: 'coef_dragons', label: 'Combinaison de Dragons (Quantité)', dbl: 1, isCount: true },
+                { id: 'coef_fleur_p', label: 'Avoir sa fleur ou sa saison', dbl: 1 },
+                { id: 'coef_bouquet', label: 'Avoir un bouquet de fleurs/saisons', dbl: 2 }
+            ],
+            winningBonus: [
+                { id: 'win_mahjong', label: 'Mah-Jong', value: 20 },
+                { id: 'win_4chow', label: '4 Chew et une Paire', value: 10 },
+                { id: 'win_mur', label: 'Mah-Jong en prenant une tuile du mur', value: 5 },
+                { id: 'win_coq', label: "Picorer par le coq d'or (Fleur prunier)", value: 100 },
+                { id: 'win_servi', label: 'Mah-Jong Servi', value: 150 },
+                { id: 'win_7paires', label: 'Mah-Jong 7 Paires', value: 300 }
+            ],
+            winningMultipliers: [
+                { id: 'spec_sans_chow', label: 'Mah-Jong sans Chew', dbl: 1 },
+                { id: 'spec_vol_kong', label: 'Mah-Jong en volant un Kong', dbl: 1 },
+                { id: 'spec_19_hon', label: 'Mah-Jong de 1, 9 et Honneurs', dbl: 1 },
+                { id: 'spec_lune', label: 'Pêcher la lune au fond de la mer', dbl: 1 },
+                { id: 'spec_cachee', label: 'Main cachée', dbl: 1 },
+                { id: 'spec_trouble', label: 'Main trouble', dbl: 1 },
+                { id: 'spec_pure', label: 'Main pure', dbl: 2 },
+                { id: 'spec_tout_hon', label: 'Main tout en Honneurs', dbl: 2 }
+            ]
+        };
+
+        // --- ÉTAT GLOBAL ---
+        let gameState = {
+            playerCount: 4,
+            startingPoints: 0,
+            players: [
+                { id: 0, name: "Joueur 1", scores: [0] },
+                { id: 1, name: "Joueur 2", scores: [0] },
+                { id: 2, name: "Joueur 3", scores: [0] },
+                { id: 3, name: "Joueur 4", scores: [0] }
+            ],
+            rounds: []
+        };
+
+        let currentCalcState = {
+            activePlayerId: 0,
+            estId: 0,
+            winnerId: 0,
+            victoryMethod: 'tsumo',
+            discarderId: 1,
+            playerHands: {}
+        };
+
+        let chartInstance = null;
+
+        // --- SAUVEGARDE DES PARTIES (LOCALSTORAGE) ---
+        const PARTIES_STORAGE_KEY = 'majhong_parties_v1';
+        let currentPartyId = null;
+        let currentPartyName = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            resetCurrentCalcState();
+            initGame();
+        });
+
+        function initGame() {
+            renderPlayerInputs();
+            syncCalcSelectors();
+            renderSubTabs();
+            renderMatrixForm();
+            renderLeaderboard();
+            renderHistoryTable();
+            initChart();
+            updateCalculations();
+            updateCurrentPartyLabel();
+            renderPartiesList();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function makeDefaultGameState() {
+            return {
+                playerCount: 4,
+                startingPoints: 0,
+                players: [
+                    { id: 0, name: "Joueur 1", scores: [0] },
+                    { id: 1, name: "Joueur 2", scores: [0] },
+                    { id: 2, name: "Joueur 3", scores: [0] },
+                    { id: 3, name: "Joueur 4", scores: [0] }
+                ],
+                rounds: []
+            };
+        }
+
+        function loadSavesFromStorage() {
+            try {
+                const raw = localStorage.getItem(PARTIES_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveSavesToStorage(saves) {
+            localStorage.setItem(PARTIES_STORAGE_KEY, JSON.stringify(saves));
+        }
+
+        function generatePartyId() {
+            return 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+        }
+
+        function updateCurrentPartyLabel() {
+            const label = document.getElementById('current-party-label');
+            if (!label) return;
+            label.innerText = currentPartyName ? `Partie active : ${currentPartyName}` : 'Partie non sauvegardée';
+        }
+
+        // --- MODALE DE NOMMAGE (Sauvegarde / Nouvelle Partie) ---
+        function openSaveModal() {
+            document.getElementById('name-modal-title').innerText = 'Sauvegarder la partie';
+            document.getElementById('name-modal-input').value = currentPartyName || `Partie du ${new Date().toLocaleDateString('fr-FR')}`;
+            document.getElementById('name-modal').dataset.mode = 'save';
+            document.getElementById('name-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('name-modal-input').select(), 50);
+        }
+
+        function openCreatePartyModal() {
+            document.getElementById('name-modal-title').innerText = 'Nouvelle partie';
+            document.getElementById('name-modal-input').value = `Partie du ${new Date().toLocaleDateString('fr-FR')}`;
+            document.getElementById('name-modal').dataset.mode = 'create';
+            document.getElementById('name-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('name-modal-input').select(), 50);
+        }
+
+        function closeNameModal() {
+            document.getElementById('name-modal').classList.add('hidden');
+        }
+
+        function confirmNameModal() {
+            const input = document.getElementById('name-modal-input');
+            const name = input.value.trim();
+            if (!name) { input.focus(); return; }
+            const mode = document.getElementById('name-modal').dataset.mode;
+            if (mode === 'save') {
+                doSaveParty(name);
+            } else if (mode === 'create') {
+                doCreateParty(name);
+            }
+            closeNameModal();
+        }
+
+        // --- CRUD DES PARTIES ---
+        function doSaveParty(name) {
+            const saves = loadSavesFromStorage();
+            const snapshot = JSON.parse(JSON.stringify(gameState));
+            if (currentPartyId) {
+                const idx = saves.findIndex(s => s.id === currentPartyId);
+                if (idx >= 0) {
+                    saves[idx].name = name;
+                    saves[idx].updatedAt = Date.now();
+                    saves[idx].gameState = snapshot;
+                } else {
+                    saves.push({ id: currentPartyId, name, updatedAt: Date.now(), gameState: snapshot });
+                }
+            } else {
+                currentPartyId = generatePartyId();
+                saves.push({ id: currentPartyId, name, updatedAt: Date.now(), gameState: snapshot });
+            }
+            currentPartyName = name;
+            saveSavesToStorage(saves);
+            updateCurrentPartyLabel();
+            renderPartiesList();
+        }
+
+        function doCreateParty(name) {
+            const saves = loadSavesFromStorage();
+            const id = generatePartyId();
+            saves.push({ id, name, updatedAt: Date.now(), gameState: makeDefaultGameState() });
+            saveSavesToStorage(saves);
+            loadPartyById(id);
+        }
+
+        function loadPartyById(id) {
+            const saves = loadSavesFromStorage();
+            const entry = saves.find(s => s.id === id);
+            if (!entry) return;
+            gameState = JSON.parse(JSON.stringify(entry.gameState));
+            currentPartyId = entry.id;
+            currentPartyName = entry.name;
+            resetCurrentCalcState();
+            initGame();
+            const menu = document.getElementById('load-menu');
+            if (menu) menu.classList.add('hidden');
+            switchTab('dashboard');
+        }
+
+        function deletePartyById(id) {
+            const saves = loadSavesFromStorage();
+            const entry = saves.find(s => s.id === id);
+            if (!entry) return;
+            if (!confirm(`Supprimer définitivement la partie "${entry.name}" ? Cette action est irréversible.`)) return;
+            saveSavesToStorage(saves.filter(s => s.id !== id));
+            if (currentPartyId === id) {
+                currentPartyId = null;
+                currentPartyName = null;
+                updateCurrentPartyLabel();
+            }
+            renderPartiesList();
+            renderLoadMenu();
+        }
+
+        function renderPartiesList() {
+            const cont = document.getElementById('parties-list-container');
+            const msg = document.getElementById('no-parties-message');
+            if (!cont) return;
+            const saves = loadSavesFromStorage().sort((a, b) => b.updatedAt - a.updatedAt);
+            cont.innerHTML = '';
+            if (saves.length === 0) {
+                msg.classList.remove('hidden');
+                return;
+            }
+            msg.classList.add('hidden');
+            saves.forEach(s => {
+                const isActive = s.id === currentPartyId;
+                const playersNames = (s.gameState.players || []).map(p => p.name).join(', ');
+                const roundsCount = (s.gameState.rounds || []).length;
+                const dateStr = new Date(s.updatedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const div = document.createElement('div');
+                div.className = `flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border ${isActive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-800/40 border-slate-800'}`;
+                div.innerHTML = `
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-slate-100 truncate">${escapeHtml(s.name)}</span>
+                            ${isActive ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-semibold">Active</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1 truncate">${escapeHtml(playersNames)} · ${roundsCount} manche(s) · ${dateStr}</p>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <button onclick="loadPartyById('${s.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-semibold px-3 py-2 rounded-lg transition">Charger</button>
+                        <button onclick="deletePartyById('${s.id}')" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-medium px-3 py-2 rounded-lg transition">Supprimer</button>
+                    </div>
+                `;
+                cont.appendChild(div);
+            });
+        }
+
+        // --- MENU DÉROULANT DE CHARGEMENT RAPIDE ---
+        function renderLoadMenu() {
+            const menu = document.getElementById('load-menu');
+            if (!menu) return;
+            const saves = loadSavesFromStorage().sort((a, b) => b.updatedAt - a.updatedAt);
+            if (saves.length === 0) {
+                menu.innerHTML = '<div class="text-xs text-slate-500 text-center py-4 px-2">Aucune partie sauvegardée.</div>';
+                return;
+            }
+            menu.innerHTML = '';
+            saves.forEach(s => {
+                const isActive = s.id === currentPartyId;
+                const dateStr = new Date(s.updatedAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const btn = document.createElement('button');
+                btn.onclick = () => loadPartyById(s.id);
+                btn.className = `w-full text-left px-3 py-2 rounded-lg text-sm transition ${isActive ? 'bg-emerald-500/10 text-emerald-400' : 'hover:bg-slate-800 text-slate-200'}`;
+                btn.innerHTML = `<div class="font-medium truncate">${escapeHtml(s.name)}</div><div class="text-[10px] text-slate-500">${dateStr}</div>`;
+                menu.appendChild(btn);
+            });
+        }
+
+        function toggleLoadMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('load-menu');
+            if (menu.classList.contains('hidden')) {
+                renderLoadMenu();
+                menu.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('load-menu');
+            if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && !e.target.closest('button[onclick^="toggleLoadMenu"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function resetCurrentCalcState() {
+            currentCalcState.playerHands = {};
+            for (let i = 0; i < 4; i++) {
+                currentCalcState.playerHands[i] = { base: {}, multipliers: {}, winningBonus: {}, winningMultipliers: {} };
+                MATRIX_SCHEMA.base.forEach(item => currentCalcState.playerHands[i].base[item.id] = 0);
+                MATRIX_SCHEMA.multipliers.forEach(item => currentCalcState.playerHands[i].multipliers[item.id] = 0);
+                MATRIX_SCHEMA.winningBonus.forEach(item => currentCalcState.playerHands[i].winningBonus[item.id] = (item.id === 'win_mahjong' ? 1 : 0));
+                MATRIX_SCHEMA.winningMultipliers.forEach(item => currentCalcState.playerHands[i].winningMultipliers[item.id] = 0);
+            }
+        }
+
+        function switchTab(tabId) {
+            const tabIds = ['dashboard', 'calculator', 'parties'];
+            tabIds.forEach(id => {
+                const tabBtn = document.getElementById(`tab-${id}`);
+                const view = document.getElementById(`view-${id}`);
+                if (id === tabId) {
+                    tabBtn.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-emerald-600 text-slate-950";
+                    view.classList.remove('hidden');
+                } else {
+                    tabBtn.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200";
+                    view.classList.add('hidden');
+                }
+            });
+
+            if (tabId === 'dashboard') {
+                setTimeout(() => { if (chartInstance) chartInstance.update(); }, 40);
+            } else if (tabId === 'calculator') {
+                renderSubTabs();
+                updateCalculations();
+            } else if (tabId === 'parties') {
+                renderPartiesList();
+            }
+        }
+
+        function updatePlayerCount(count) {
+            gameState.playerCount = parseInt(count);
+            if (gameState.players.length < gameState.playerCount) {
+                for (let i = gameState.players.length; i < gameState.playerCount; i++) {
+                    gameState.players.push({ id: i, name: `Joueur ${i + 1}`, scores: Array(gameState.rounds.length + 1).fill(gameState.startingPoints) });
+                }
+            } else {
+                gameState.players = gameState.players.slice(0, gameState.playerCount);
+            }
+            resetCurrentCalcState();
+            initGame();
+        }
+
+        function updateStartingPoints(value) {
+            const pts = parseInt(value) || 0;
+            gameState.startingPoints = pts;
+            gameState.players.forEach(p => p.scores[0] = pts);
+            recalculateScores();
+        }
+
+        function handleNameChange(index, value) {
+            gameState.players[index].name = value.trim() || `Joueur ${index + 1}`;
+            syncCalcSelectors();
+            renderSubTabs();
+            renderLeaderboard();
+            if (chartInstance) updateChart();
+        }
+
+        function renderPlayerInputs() {
+            const cont = document.getElementById('player-inputs-container');
+            cont.innerHTML = '';
+            gameState.players.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-800/40 p-4 rounded-xl border border-slate-800 space-y-1";
+                div.innerHTML = `
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Nom Joueur ${i + 1}</label>
+                    <input type="text" value="${p.name}" oninput="handleNameChange(${i}, this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none text-slate-100">
+                `;
+                cont.appendChild(div);
+            });
+        }
+
+        function syncCalcSelectors() {
+            const selects = ['calc-est', 'calc-winner', 'calc-discarder'];
+            selects.forEach(id => {
+                const sel = document.getElementById(id);
+                const prev = sel.value;
+                sel.innerHTML = '';
+                gameState.players.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.innerText = p.name;
+                    sel.appendChild(opt);
+                });
+                if (prev !== "" && parseInt(prev) < gameState.playerCount) sel.value = prev;
+            });
+        }
+
+        function handleWinnerChange() {
+            currentCalcState.winnerId = parseInt(document.getElementById('calc-winner').value);
+            updateCalculations();
+            renderMatrixForm();
+        }
+
+        function handleMethodChange() {
+            currentCalcState.victoryMethod = document.getElementById('calc-method').value;
+            const container = document.getElementById('calc-discarder-container');
+            if (currentCalcState.victoryMethod === 'ron') container.classList.remove('hidden');
+            else container.classList.add('hidden');
+            updateCalculations();
+        }
+
+        function changeSubTab(id) {
+            currentCalcState.activePlayerId = id;
+            renderSubTabs();
+            renderMatrixForm();
+        }
+
+        function renderSubTabs() {
+            const cont = document.getElementById('player-subtabs-container');
+            cont.innerHTML = '';
+            gameState.players.forEach(p => {
+                const score = calculateSingleHand(p.id).rounded;
+                const isActive = p.id === currentCalcState.activePlayerId;
+                const isW = p.id === currentCalcState.winnerId;
+                const btn = document.createElement('button');
+                btn.onclick = () => changeSubTab(p.id);
+                btn.className = `flex-1 min-w-[120px] px-3 py-2.5 rounded-lg text-xs font-medium tracking-wide transition-all border whitespace-nowrap text-center ${isActive ? 'bg-emerald-600 text-slate-950 border-emerald-500 font-bold' : 'bg-slate-800/60 text-slate-300 border-slate-700 hover:bg-slate-800'
+                    }`;
+                btn.innerHTML = `<div>${p.name} ${isW ? '👑' : ''}</div><div class="text-[10px] ${isActive ? 'text-slate-900' : 'text-emerald-400'} font-bold mt-0.5">${score} pts</div>`;
+                cont.appendChild(btn);
+            });
+        }
+
+        // --- ENGINE MATHÉMATIQUE ---
+        function calculateSingleHand(playerId) {
+            const data = currentCalcState.playerHands[playerId];
+            const isWinner = playerId === currentCalcState.winnerId;
+
+            let basePts = 0;
+            MATRIX_SCHEMA.base.forEach(item => {
+                basePts += (data.base[item.id] || 0) * item.value;
+            });
+
+            let baseDoublons = 0;
+            MATRIX_SCHEMA.multipliers.forEach(item => {
+                if (item.isCount) {
+                    baseDoublons += (data.multipliers[item.id] || 0);
+                } else if (data.multipliers[item.id] === 1) {
+                    baseDoublons += item.dbl;
+                }
+            });
+            let intermediateMultiplier = Math.pow(2, baseDoublons);
+            let scoreWithCoef = basePts * intermediateMultiplier;
+
+            let fixedBonus = 0;
+            if (isWinner) {
+                MATRIX_SCHEMA.winningBonus.forEach(item => {
+                    if (data.winningBonus[item.id] === 1) fixedBonus += item.value;
+                });
+            }
+            let subtotalBeforeSpec = scoreWithCoef + fixedBonus;
+
+            let specDoublons = 0;
+            if (isWinner) {
+                MATRIX_SCHEMA.winningMultipliers.forEach(item => {
+                    if (data.winningMultipliers[item.id] === 1) specDoublons += item.dbl;
+                });
+            }
+            let finalMultiplier = Math.pow(2, specDoublons);
+            let rawTotal = subtotalBeforeSpec * finalMultiplier;
+
+            let roundedTotal = rawTotal;
+            if (roundedTotal % 10 !== 0) {
+                roundedTotal = Math.ceil(roundedTotal / 10) * 10;
+            }
+
+            return {
+                base: basePts,
+                doublonsBase: baseDoublons,
+                interm: scoreWithCoef,
+                bonus: fixedBonus,
+                doublonsFinaux: specDoublons,
+                raw: rawTotal,
+                rounded: roundedTotal
+            };
+        }
+
+        // --- TRANSFERTS DE POINTS (DELTAS EN PARTANT DE 0) ---
+        function updateCalculations() {
+            currentCalcState.estId = parseInt(document.getElementById('calc-est').value);
+            currentCalcState.winnerId = parseInt(document.getElementById('calc-winner').value);
+            currentCalcState.discarderId = parseInt(document.getElementById('calc-discarder').value);
+
+            let handsScores = {};
+            gameState.players.forEach(p => {
+                handsScores[p.id] = calculateSingleHand(p.id).rounded;
+            });
+
+            let deltas = {};
+            gameState.players.forEach(p => deltas[p.id] = 0);
+
+            const W = currentCalcState.winnerId;
+            const E = currentCalcState.estId;
+
+            // 1. Paiements du gagnant
+            gameState.players.forEach(p => {
+                if (p.id === W) return;
+
+                let multiplier = 1;
+                if (W === E || p.id === E) multiplier = 2;
+                let due = handsScores[W] * multiplier;
+
+                if (currentCalcState.victoryMethod === 'tsumo') {
+                    deltas[p.id] -= due;
+                    deltas[W] += due;
+                } else {
+                    deltas[currentCalcState.discarderId] -= due;
+                    deltas[W] += due;
+                }
+            });
+
+            // 2. Échanges croisés entre perdants (Différence de points)
+            for (let i = 0; i < gameState.playerCount; i++) {
+                for (let j = i + 1; j < gameState.playerCount; j++) {
+                    if (i === W || j === W) continue;
+
+                    let diff = handsScores[i] - handsScores[j];
+                    if (diff === 0) continue;
+
+                    let mult = 1;
+                    if (i === E || j === E) mult = 2;
+
+                    let exchange = Math.abs(diff) * mult;
+                    if (diff > 0) {
+                        deltas[i] += exchange;
+                        deltas[j] -= exchange;
+                    } else {
+                        deltas[j] += exchange;
+                        deltas[i] -= exchange;
+                    }
+                }
+            }
+
+            // Affichage dans le volet latéral
+            const panel = document.getElementById('side-summary-balances');
+            panel.innerHTML = '';
+
+            gameState.players.forEach(p => {
+                const handInfo = calculateSingleHand(p.id);
+                const net = deltas[p.id];
+                const netColor = net > 0 ? 'text-emerald-400 font-bold' : net < 0 ? 'text-rose-400 font-bold' : 'text-slate-400';
+                const sign = net > 0 ? '+' : '';
+
+                const div = document.createElement('div');
+                div.className = "py-2.5 space-y-1";
+                div.innerHTML = `
+                    <div class="flex justify-between font-medium">
+                        <span class="text-slate-200">${p.name} ${p.id === E ? '<span class="text-[10px] bg-amber-500/10 text-amber-400 px-1 rounded border border-amber-500/20">EST</span>' : ''}</span>
+                        <span class="${netColor}">${sign}${net} pts</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>Valeur main : ${handInfo.rounded}</span>
+                        <span>(Base: ${handInfo.base} | Dbl: ${handInfo.doublonsBase + handInfo.doublonsFinaux})</span>
+                    </div>
+                `;
+                panel.appendChild(div);
+            });
+
+            gameState.players.forEach(p => {
+                const subtab = document.querySelector(`#player-subtabs-container button:nth-child(${p.id + 1}) div:nth-child(2)`);
+                if (subtab) subtab.innerText = `${handsScores[p.id]} pts`;
+            });
+        }
+
+        // --- CONFIGURATEUR DES FORMULAIRES DE GRILLLES ---
+        function renderMatrixForm() {
+            const grid = document.getElementById('matrix-inputs-grid');
+            grid.innerHTML = '';
+
+            const pId = currentCalcState.activePlayerId;
+            const isWinner = pId === currentCalcState.winnerId;
+            const data = currentCalcState.playerHands[pId];
+
+            document.getElementById('calc-current-player-title').innerText = `Main de : ${gameState.players.find(p => p.id === pId).name}`;
+            const badge = document.getElementById('calc-player-status-badge');
+            if (isWinner) {
+                badge.innerText = "Gagnant (Accès aux Bonus)";
+                badge.className = "text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-md font-semibold border border-emerald-500/20";
+            } else {
+                badge.innerText = "Non-gagnant";
+                badge.className = "text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-md";
+            }
+
+            const sec1 = document.createElement('div');
+            sec1.className = "space-y-3";
+            sec1.innerHTML = `<h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-1.5">1. Combinaisons (Points de Base)</h4>`;
+            const d1 = document.createElement('div');
+            d1.className = "grid grid-cols-1 md:grid-cols-2 gap-3 text-sm";
+
+            MATRIX_SCHEMA.base.forEach(item => {
+                const val = data.base[item.id] || 0;
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center bg-slate-800/20 p-2 rounded-xl border border-slate-800/40";
+                row.innerHTML = `
+                    <span class="text-slate-300 text-xs">${item.label} <span class="text-emerald-500/80 font-medium">(+${item.value})</span></span>
+                    <input type="number" min="0" value="${val}" onchange="handleMatrixInput('base', '${item.id}', this.value)" class="w-16 bg-slate-950 border border-slate-700 focus:border-emerald-500 text-center rounded-lg p-1 text-emerald-400 font-bold text-sm focus:outline-none">
+                `;
+                d1.appendChild(row);
+            });
+            sec1.appendChild(d1);
+            grid.appendChild(sec1);
+
+            const sec2 = document.createElement('div');
+            sec2.className = "space-y-3";
+            sec2.innerHTML = `<h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-1.5">2. Multiplicateurs Généraux (Doublons)</h4>`;
+            const d2 = document.createElement('div');
+            d2.className = "grid grid-cols-1 md:grid-cols-2 gap-3 text-sm";
+
+            MATRIX_SCHEMA.multipliers.forEach(item => {
+                const val = data.multipliers[item.id] || 0;
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center bg-slate-800/20 p-2 rounded-xl border border-slate-800/40";
+
+                if (item.isCount) {
+                    row.innerHTML = `
+                        <span class="text-slate-300 text-xs">${item.label}</span>
+                        <input type="number" min="0" value="${val}" onchange="handleMatrixInput('multipliers', '${item.id}', this.value)" class="w-16 bg-slate-950 border border-slate-700 focus:border-emerald-500 text-center rounded-lg p-1 text-emerald-400 font-bold text-sm focus:outline-none">
+                    `;
+                } else {
+                    const checked = val === 1 ? 'checked' : '';
+                    row.innerHTML = `
+                        <label class="flex items-center gap-3 cursor-pointer w-full select-none py-1">
+                            <input type="checkbox" ${checked} onchange="handleMatrixInput('multipliers', '${item.id}', this.checked ? 1 : 0)" class="rounded bg-slate-950 border-slate-700 text-emerald-600 focus:ring-0">
+                            <span class="text-slate-300 text-xs">${item.label} <span class="text-emerald-500/80">(+${item.dbl} dbl)</span></span>
+                        </label>
+                    `;
+                }
+                d2.appendChild(row);
+            });
+            sec2.appendChild(d2);
+            grid.appendChild(sec2);
+
+            const winnerZone = document.createElement('div');
+            winnerZone.className = `space-y-6 ${isWinner ? '' : 'opacity-25 pointer-events-none select-none'}`;
+
+            winnerZone.innerHTML += `<div class="space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-1.5">3. Valeur de la Main Gagnante (Bonus Fixes)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm" id="box-sec3"></div>
+            </div>`;
+
+            winnerZone.innerHTML += `<div class="space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-1.5">4. Multiplicateurs de Victoire</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm" id="box-sec4"></div>
+            </div>`;
+
+            grid.appendChild(winnerZone);
+
+            const b3 = document.getElementById('box-sec3');
+            MATRIX_SCHEMA.winningBonus.forEach(item => {
+                const activeVal = data.winningBonus[item.id] || 0;
+                const row = document.createElement('div');
+                row.className = "bg-slate-800/20 p-2 rounded-xl border border-slate-800/40";
+                row.innerHTML = `
+                    <label class="flex items-center gap-3 cursor-pointer select-none py-1">
+                        <input type="checkbox" ${activeVal === 1 ? 'checked' : ''} onchange="handleMatrixInput('winningBonus', '${item.id}', this.checked ? 1 : 0)" class="rounded bg-slate-950 border-slate-700 text-emerald-600 focus:ring-0">
+                        <span class="text-slate-300 text-xs">${item.label} <span class="text-emerald-400 font-bold">(+${item.value})</span></span>
+                    </label>
+                `;
+                b3.appendChild(row);
+            });
+
+            const b4 = document.getElementById('box-sec4');
+            MATRIX_SCHEMA.winningMultipliers.forEach(item => {
+                const activeVal = data.winningMultipliers[item.id] || 0;
+                const row = document.createElement('div');
+                row.className = "bg-slate-800/20 p-2 rounded-xl border border-slate-800/40";
+                row.innerHTML = `
+                    <label class="flex items-center gap-3 cursor-pointer select-none py-1">
+                        <input type="checkbox" ${activeVal === 1 ? 'checked' : ''} onchange="handleMatrixInput('winningMultipliers', '${item.id}', this.checked ? 1 : 0)" class="rounded bg-slate-950 border-slate-700 text-emerald-600 focus:ring-0">
+                        <span class="text-slate-300 text-xs">${item.label} <span class="text-emerald-400 font-bold">(+${item.dbl} dbl)</span></span>
+                    </label>
+                `;
+                b4.appendChild(row);
+            });
+        }
+
+        function handleMatrixInput(sectionKey, fieldId, value) {
+            const pId = currentCalcState.activePlayerId;
+            currentCalcState.playerHands[pId][sectionKey][fieldId] = parseInt(value) || 0;
+            updateCalculations();
+        }
+
+        // --- SAUVEGARDE ET HISTORIQUE ---
+        function saveCalculatedRound() {
+            let finalScoresHands = {};
+            let finalImpacts = {};
+
+            gameState.players.forEach(p => {
+                finalScoresHands[p.id] = calculateSingleHand(p.id).rounded;
+                finalImpacts[p.id] = 0;
+            });
+
+            const W = currentCalcState.winnerId;
+            const E = currentCalcState.estId;
+
+            gameState.players.forEach(p => {
+                if (p.id === W) return;
+                let mult = (W === E || p.id === E) ? 2 : 1;
+                let value = finalScoresHands[W] * mult;
+
+                if (currentCalcState.victoryMethod === 'tsumo') {
+                    finalImpacts[p.id] -= value;
+                    finalImpacts[W] += value;
+                } else {
+                    finalImpacts[currentCalcState.discarderId] -= value;
+                    finalImpacts[W] += value;
+                }
+            });
+
+            for (let i = 0; i < gameState.playerCount; i++) {
+                for (let j = i + 1; j < gameState.playerCount; j++) {
+                    if (i === W || j === W) continue;
+                    let diff = finalScoresHands[i] - finalScoresHands[j];
+                    if (diff === 0) continue;
+                    let mult = (i === E || j === E) ? 2 : 1;
+                    let exchange = Math.abs(diff) * mult;
+                    if (diff > 0) {
+                        finalImpacts[i] += exchange;
+                        finalImpacts[j] -= exchange;
+                    } else {
+                        finalImpacts[j] += exchange;
+                        finalImpacts[i] -= exchange;
+                    }
+                }
+            }
+
+            gameState.rounds.push({
+                roundNum: gameState.rounds.length + 1,
+                estName: gameState.players.find(p => p.id === E).name,
+                winnerName: gameState.players.find(p => p.id === W).name,
+                typeText: currentCalcState.victoryMethod === 'tsumo' ? 'Tsumo (Pioche)' : 'Ron (Défausse)',
+                impacts: finalImpacts
+            });
+
+            recalculateScores();
+            resetCurrentCalcState();
+            initGame();
+            switchTab('dashboard');
+        }
+
+        function recalculateScores() {
+            gameState.players.forEach(p => p.scores = [gameState.startingPoints]);
+            gameState.rounds.forEach(r => {
+                gameState.players.forEach(p => {
+                    const current = p.scores[p.scores.length - 1];
+                    p.scores.push(current + (r.impacts[p.id] || 0));
+                });
+            });
+        }
+
+        function deleteRound(idx) {
+            if (confirm("Confirmer la suppression de cette manche ?")) {
+                gameState.rounds.splice(idx, 1);
+                recalculateScores();
+                initGame();
+            }
+        }
+
+        function resetGame() {
+            if (confirm("Réinitialiser toute la partie ? Données non récupérables.")) {
+                gameState.rounds = [];
+                resetCurrentCalcState();
+                recalculateScores();
+                initGame();
+            }
+        }
+
+        function renderLeaderboard() {
+            const cont = document.getElementById('leaderboard-container');
+            cont.innerHTML = '';
+            let sorted = [...gameState.players].map(p => ({
+                name: p.name,
+                score: p.scores[p.scores.length - 1]
+            })).sort((a, b) => b.score - a.score);
+
+            sorted.forEach((p, idx) => {
+                let medal = idx === 0 ? '👑 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : '🔹 ';
+                let sign = p.score > 0 ? '+' : '';
+                let scoreColor = p.score > 0 ? 'text-emerald-400' : p.score < 0 ? 'text-rose-400' : 'text-slate-400';
+
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-slate-800/40 p-3.5 rounded-xl border border-slate-800";
+                div.innerHTML = `<span class="text-sm font-medium text-slate-300">${medal}${p.name}</span><span class="font-bold ${scoreColor}">${sign}${p.score} pts</span>`;
+                cont.appendChild(div);
+            });
+        }
+
+        function renderHistoryTable() {
+            const body = document.getElementById('rounds-history-body');
+            const msg = document.getElementById('no-rounds-message');
+            body.innerHTML = '';
+
+            document.getElementById('rounds-count').innerText = `${gameState.rounds.length} manche(s) enregistrée(s)`;
+            if (gameState.rounds.length === 0) { msg.classList.remove('hidden'); return; }
+            msg.classList.add('hidden');
+
+            gameState.rounds.forEach((r, idx) => {
+                let impactsHTML = '<div class="space-y-1 text-[11px] min-w-[150px]">';
+                gameState.players.forEach(p => {
+                    let imp = r.impacts[p.id] || 0;
+                    let cls = imp > 0 ? 'text-emerald-400 font-bold' : imp < 0 ? 'text-rose-400 font-bold' : 'text-slate-500';
+                    impactsHTML += `<div class="flex justify-between"><span>${p.name} :</span><span class="${cls}">${imp > 0 ? '+' : ''}${imp}</span></div>`;
+                });
+                impactsHTML += '</div>';
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-800/70 hover:bg-slate-900/40 transition text-slate-300";
+                tr.innerHTML = `
+                    <td class="py-4 px-4 font-bold text-emerald-400">M.${r.roundNum}</td>
+                    <td class="py-4 px-4 text-xs text-slate-400">${r.estName}</td>
+                    <td class="py-4 px-4 font-semibold text-slate-200">${r.winnerName}</td>
+                    <td class="py-4 px-4 text-xs">${r.typeText}</td>
+                    <td class="py-4 px-4 flex justify-center">${impactsHTML}</td>
+                    <td class="py-4 px-4 text-right">
+                        <button onclick="deleteRound(${idx})" class="text-xs text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded-md transition">Supprimer</button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        // --- GRAPHISME DES COURBES (ADAPTÉ AUX ZÉROS ET NÉGATIFS) ---
+        function initChart() {
+            const ctx = document.getElementById('progressionChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: gameState.rounds.length + 1 }, (_, i) => i === 0 ? "Départ" : `M.${i}`),
+                    datasets: generateChartDatasets()
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 } } },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+                    },
+                    elements: { line: { tension: 0.15, borderWidth: 3 }, point: { radius: 3 } }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (!chartInstance) return;
+            chartInstance.data.labels = Array.from({ length: gameState.rounds.length + 1 }, (_, i) => i === 0 ? "Départ" : `M.${i}`);
+            chartInstance.data.datasets = generateChartDatasets();
+            chartInstance.update();
+        }
+
+        function generateChartDatasets() {
+            const pal = [
+                { border: '#10b981', bg: 'rgba(16, 185, 129, 0.05)' },
+                { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.05)' },
+                { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.05)' },
+                { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.05)' }
+            ];
+            return gameState.players.map((p, idx) => ({
+                label: p.name,
+                data: [...p.scores],
+                borderColor: pal[idx % pal.length].border,
+                backgroundColor: pal[idx % pal.length].bg,
+                fill: false
+            }));
+        }
+    </script>
+</body>
+
+</html>
