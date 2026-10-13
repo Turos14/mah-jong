@@ -29,6 +29,10 @@ The three top-level views (`view-dashboard`, `view-calculator`, `view-parties`) 
 
 Saved games ("parties") live in `localStorage` under the key `majhong_parties_v1` as an array of `{ id, name, updatedAt, gameState }`. `currentPartyId`/`currentPartyName` track which save (if any) is currently loaded; an unsaved game has no label and is purely in-memory until `doSaveParty`/`doCreateParty` is called. There is no server/backend — all state is per-browser.
 
+### PWA / installation
+
+The app is installable as a PWA: `maj-jong/manifest.webmanifest` declares the icons (`maj-jong/icons/`) and display mode, and `maj-jong/sw.js` is a minimal cache-first service worker registered from `index.html`. The "Installer l'app" button in the header only appears when the browser fires `beforeinstallprompt` (desktop/Android Chrome-family browsers); iOS Safari has no such event and relies on the manual "Add to Home Screen" share-sheet action instead, using the same manifest/icons.
+
 ### Re-render pattern
 
 There's no reactive framework: any state mutation is followed by manually calling the relevant `render*()`/`update*()` functions (commonly bundled via `initGame()`, which re-renders everything). When adding a new state field or control, follow this same pattern — mutate `gameState`/`currentCalcState`, then call the render functions for whatever UI depends on it.

@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suivi & Calcul de Scores Maj-hong</title>
+    <meta name="theme-color" content="#10b981">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <!-- Tailwind CSS pour un design haut de gamme -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js pour le graphique d'évolution -->
@@ -77,6 +81,11 @@
                     Mes Parties
                 </button>
             </div>
+
+            <button onclick="installApp()" id="install-button"
+                class="hidden flex items-center gap-1.5 text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-all duration-200 px-4 py-2 rounded-lg font-medium shadow-lg shadow-emerald-900/20">
+                ⬇️ Installer l'app
+            </button>
         </div>
     </header>
 
@@ -394,6 +403,37 @@
             resetCurrentCalcState();
             initGame();
         });
+
+        // --- INSTALLATION DE L'APPLICATION (PWA) ---
+        let deferredInstallPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const btn = document.getElementById('install-button');
+            if (btn) btn.classList.remove('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            const btn = document.getElementById('install-button');
+            if (btn) btn.classList.add('hidden');
+        });
+
+        async function installApp() {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            const btn = document.getElementById('install-button');
+            if (btn) btn.classList.add('hidden');
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => { });
+            });
+        }
 
         function initGame() {
             renderPlayerInputs();
