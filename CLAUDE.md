@@ -4,42 +4,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-file French-language web app for tracking Mahjong (Mah-jong / "Maj-hong") game scores, with a built-in hand-value calculator for a traditional multi-player scoring system. The entire app — markup, styling, and logic — lives in `maj-jong/index.html`. There is no build step and no package manager.
+A French-language static web app for tracking Mahjong ("Maj-hong") game scores. Players fill their hand with tiles (drag/tap from a tile tray) and the app detects the combinations of **Chinese Official Mahjong (MCR, 81 fans)** and computes the round payout. There is no build step, no package manager and no backend. Tailwind CSS (`cdn.tailwindcss.com`) and Chart.js (jsDelivr) are loaded from CDN in `index.html`.
 
-Dependencies are loaded from CDN directly in `<head>`: Tailwind CSS (`cdn.tailwindcss.com`) for styling and Chart.js for the score-progression chart. There is no bundler, transpiler, or test suite.
+## Layout
 
-## Running / developing
+```
+maj-jong/                  # the deployed site root (GitHub Pages uploads this directory only)
+  index.html               # markup only; loads the scripts below in order (plain <script>, no modules)
+  css/app.css
+  sw.js, manifest.webmanifest, icons/
+  assets/tiles/<id>.png    # 42 tile images cropped from the supplied sheet (ids below)
+  js/
+    data/tiles.js          # tile catalogue + helpers (isSuited, isHonor, ...)
+    data/fans.js           # FANS (81 combos: value, FR/ZH name, description, exclusions, example), HAND_TYPES
+    engine/hand.js         # hand model (createHand, handFromSpec, countUsed, seatWindOf)
+    engine/fans-engine.js  # evaluateHand(): pure, no DOM
+    engine/payout.js       # computePayout(): winner/loser point transfers
+    state.js, storage.js   # globals (gameState, currentCalcState) and localStorage helpers
+    ui/                    # dashboard, tile-editor, calculator, rules, parties (DOM + render functions)
+    app.js                 # initGame(), switchTab(), PWA install
+tests/engine.test.js       # node tests for the engine (no dependencies)
+```
 
-Serve the `maj-jong/` directory with any static file server, e.g. `python3 -m http.server -d maj-jong 8000`, then open `http://localhost:8000/`. Opening `index.html` via `file://` works for the app itself, but the service worker only registers over http(s)/localhost. Changes take effect on reload — but once the service worker is installed it serves cached files, so use a hard reload / "Bypass for network" in DevTools while developing. There are no lint or test commands configured in this project.
+Scripts share globals (top-level `const`/`function`), so **load order in `index.html` matters** and the engine files must stay DOM-free: `tests/engine.test.js` concatenates `data/*` and `engine/*` into a `vm` context.
 
-### Deployment
+## Commands
 
-`.github/workflows/deploy.yml` publishes the `maj-jong/` directory (only that directory) to GitHub Pages on every push to `main`. Anything outside `maj-jong/` is not deployed.
+- Run the app: `python3 -m http.server -d maj-jong 8000` then open `http://localhost:8000/` (the service worker only registers over http/localhost). Once installed, the service worker serves cached files — hard-reload or use DevTools "Bypass for network".
+- Tests: `node tests/engine.test.js`. They check the official value tiers (1…88, no 5), that all 81 fans exist, that every fan example in `data/fans.js` is a valid complete hand containing its own fan, and a few exclusion/payout cases. There is no linter.
 
-## Architecture
+## Tiles and hands
 
-Everything is driven by two global, in-memory state objects defined at the top of the `<script>` block:
+Tile ids: `p1-p9` circles, `s1-s9` bamboos, `m1-m9` characters, `we ws ww wn` winds (E S W N), `dr dg dw` dragons (red, green, white), `f1-f4` flowers, `a1-a4` seasons. Max 4 copies per tile, 1 per flower (`maxCopies`).
 
-- `gameState` — the persisted game: `playerCount`, `startingPoints`, `players` (each with `id`, `name`, and a `scores` array that is one longer than `rounds` — index 0 is the starting score), and `rounds` (history of completed hands, each storing the winner, the "Est"/dealer, victory method, and per-player point `impacts`).
-  `rounds[].impacts` is the source of truth: `recalculateScores()` rebuilds every player's `scores` array from `startingPoints` + the impacts, and is called after adding or deleting a round. Don't mutate `scores` directly.
-- `currentCalcState` — transient UI state for the hand calculator: which player's tab is active, who is Est (dealer) and winner, the victory method (`tsumo`/`ron`), the discarder (for `ron`), and `playerHands` — a per-player breakdown of selected scoring-matrix entries.
+A hand is `{ type, groups: [{ kind, open, tiles[] }], flowers[8] }`. `type` is one of `standard`, `knittedStraight`, `sevenPairs`, `orphans`, `knittedHonors` (see `HAND_TYPES`); `createHand(type)` builds the matching empty groups (chow/pung/kong/knit/pair/free slots). Only the winner can pick a non-standard type; other players are always standard and only score per-group fans (see below).
 
-Scoring rules are declaratively encoded in `MATRIX_SCHEMA` (base combinations, general multipliers/doublons, winner-only fixed bonuses, and winner-only final multipliers). `renderMatrixForm()` generates the input grid directly from this schema, so **adding or changing a scoring rule means editing `MATRIX_SCHEMA`**, not the render function.
+## Scoring engine
 
-`calculateSingleHand(playerId)` is the sole scoring engine: base points × 2^(general doublons), plus winner-only fixed bonuses, × 2^(winner-only special doublons), then rounded up to the nearest 10. Both the live calculator UI and `saveCalculatedRound()` call this (or reimplement its payout logic) — if you change the scoring formula, check both `updateCalculations()` and `saveCalculatedRound()`, since they duplicate the point-transfer logic (winner payout + cross-settlement between non-winning players, both doubled when "Est" is involved) rather than sharing a single function.
+`evaluateHand(hand, ctx, isWinner)` returns `{ status, errors, warnings, fans[], total }`:
 
-The three top-level views (`view-dashboard`, `view-calculator`, `view-parties`) are plain `div`s toggled via `switchTab()` — there's no router. `view-dashboard` shows the leaderboard, Chart.js progression chart, and round history; `view-calculator` is the per-hand scoring form; `view-parties` manages saved games.
+- Winner with a complete valid hand → `detectFans()`: structure fans, whole-tile fans (flushes, ranges, all-green…), win-method flags from `ctx`, then the `excl` lists in `FANS` remove combos already included in higher ones. "Chicken hand" (8) is added when nothing else scored. Flowers are added at 1 each.
+- Anyone else, or an incomplete hand → `partialFans()`: only dragon/wind/terminal pungs, kongs and flowers.
+- To add or fix a combination: edit its entry in `data/fans.js` (value, exclusions, example), add its detection in `detectFans()`, and run the tests — an entry with an `ex` gets tested and shown on the Règles page automatically.
+- Known approximations: chow-pair fans (double chow, short straight, …) are counted per disjoint pair, and combinations are excluded only through the explicit `excl` lists, not the full MCR "no repeated scoring of the same tiles" rule.
 
-### Persistence
+`computePayout()` is the single source for the payout (used by the live preview and by `saveCalculatedRound()`): winner collects their hand value from each opponent (Tsumo) or the discarder (Ron), doubled if the Est is involved; non-winners settle the difference of their hand values, also doubled with the Est.
 
-Saved games ("parties") live in `localStorage` under the key `majhong_parties_v1` as an array of `{ id, name, updatedAt, gameState }`. `currentPartyId`/`currentPartyName` track which save (if any) is currently loaded; an unsaved game has no label and is purely in-memory until `doSaveParty`/`doCreateParty` is called. There is no server/backend — all state is per-browser.
+## State and rendering
 
-### PWA / installation
+`gameState` (players, `scores`, `rounds`) is persisted; `rounds[].impacts` is the source of truth and `recalculateScores()` rebuilds every `scores` array from it — never mutate `scores` directly. `currentCalcState` is transient calculator state (`playerHands[id] = { hand, flags }`, context, `cursor` = next hole to fill).
 
-The app is installable as a PWA: `maj-jong/manifest.webmanifest` declares the icons (`maj-jong/icons/`) and display mode, and `maj-jong/sw.js` is a minimal cache-first service worker registered from `index.html`. The "Installer l'app" button in the header only appears when the browser fires `beforeinstallprompt` (desktop/Android Chrome-family browsers); iOS Safari has no such event and relies on the manual "Add to Home Screen" share-sheet action instead, using the same manifest/icons.
+No framework: after mutating state call the relevant `render*()`/`update*()` (`initGame()` re-renders everything; tile edits go through `onHandChanged()`; context changes through `onContextChange()`). The four views (`view-dashboard|calculator|rules|parties`) are toggled by `switchTab()`; the tile dock (`#tile-dock`) is only shown on the calculator tab. The Règles page is generated from `data/fans.js` by `renderRules()`.
 
-Because the service worker is cache-first, **bump `CACHE_NAME` in `sw.js` any time a cached asset changes** (`index.html`, the manifest, or any icon) — otherwise previously-installed clients keep serving the stale cached version indefinitely, even after a new deploy.
+Saved games live in `localStorage` under `majhong_parties_v1` as `{ id, name, updatedAt, gameState }`; old saves with the legacy fields (`startingPoints`, rounds without `winnerHand`) still load.
 
-### Re-render pattern
+## PWA / deployment
 
-There's no reactive framework: any state mutation is followed by manually calling the relevant `render*()`/`update*()` functions (commonly bundled via `initGame()`, which re-renders everything). When adding a new state field or control, follow this same pattern — mutate `gameState`/`currentCalcState`, then call the render functions for whatever UI depends on it.
+`sw.js` is a cache-first service worker with an explicit `ASSETS` list. **When you add, rename or change any cached file (HTML, CSS, JS, tiles, icons, manifest), update `ASSETS` if the file is new and bump `CACHE_NAME`** — otherwise installed clients keep serving the stale version. iOS has no install prompt (manual "Add to Home Screen").
+
+`.github/workflows/deploy.yml` publishes `./maj-jong` to GitHub Pages on every push to `main`.
