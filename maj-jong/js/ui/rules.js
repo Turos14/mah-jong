@@ -11,9 +11,9 @@ function exampleHandHtml(spec, tileClass = 'tile-sm') {
 
 function renderRules() {
     document.getElementById('rules-intro').innerHTML = `
-        <p>Le comptage suit le <strong class="text-slate-200">Mah-jong chinois officiel</strong> : 81 combinaisons de 1 à 88 points. Vocabulaire : <em>suite</em> = 3 tuiles qui se suivent, <em>brelan</em> = 3 tuiles identiques, <em>carré</em> = 4 tuiles identiques.</p>
-        <p>Dans le calculateur, on choisit le Mah-jong réalisé, on remplit les trous avec les tuiles du bandeau, et l'application détecte les combinaisons. La valeur de la main est la somme des combinaisons (en retirant celles déjà incluses dans une plus haute) et des fleurs (1 point chacune).</p>
-        <p>Paiement d'une manche : le gagnant encaisse la valeur de sa main auprès de chaque adversaire (Tsumo) ou du joueur qui a défaussé (Ron), doublée si l'Est est concerné. Les autres joueurs règlent entre eux la différence de leurs mains (brelans, carrés et fleurs), doublée si l'Est est concerné.</p>
+        <p>Le comptage suit le <strong class="text-slate-200">Mah-jong chinois officiel</strong> : 81 combinaisons de 1 à 88 points. Vocabulaire : <em>chow</em> = 3 tuiles qui se suivent, <em>pong</em> = 3 tuiles identiques, <em>kong</em> = 4 tuiles identiques.</p>
+        <p>Dans le calculateur, les groupes sont exposés par défaut (décochez « Exposé » pour un groupe caché). On choisit le Mah-jong réalisé, on remplit les trous avec les tuiles du bandeau, et l'application détecte les combinaisons. La valeur de la main est la somme des combinaisons (en retirant celles déjà incluses dans une plus haute) et des fleurs (1 point chacune).</p>
+        <p>Paiement d'une manche : le gagnant encaisse la valeur de sa main auprès de chaque adversaire (Tsumo) ou du joueur qui a défaussé (Ron), doublée si l'Est est concerné. Les autres joueurs règlent entre eux la différence de leurs mains (pongs, kongs et fleurs), doublée si l'Est est concerné.</p>
         <p class="text-xs text-slate-500">Le minimum officiel pour gagner est de 8 points hors fleurs ; l'application prévient sans bloquer. Vérifiez toujours la combinaison détectée : en cas de doute sur une règle de la maison, c'est votre table qui décide.</p>`;
 
     const typeEx = {

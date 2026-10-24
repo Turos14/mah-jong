@@ -217,7 +217,7 @@ function renderHandEditor() {
     } else {
         typeBox.innerHTML = `
             <div class="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-                <p class="text-xs text-slate-400">Joueur qui n'a pas gagné : posez ses brelans, carrés et fleurs. Seuls ces éléments rapportent des points (brelans de dragons, de vents, de 1 et 9, carrés, fleurs).</p>
+                <p class="text-xs text-slate-400">Joueur qui n'a pas gagné : posez ses pongs, kongs et fleurs. Seuls ces éléments rapportent des points (pongs de dragons, de vents, de 1 et 9, kongs, fleurs).</p>
                 <button onclick="clearActiveHand()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-sm font-medium transition whitespace-nowrap">🗑️ Vider</button>
             </div>`;
     }
@@ -265,10 +265,10 @@ function renderHandEditor() {
     flagsBox.innerHTML = `
         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-1.5 mb-3">Façon de gagner</h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            ${structured ? `<div><span class="block text-[11px] text-slate-500 mb-1">Attente</span>${sel('wait', [['none', 'Autre / non précisée'], ['edge', 'Attente de bord (3 ou 7)'], ['closed', 'Attente au milieu d\'une suite'], ['single', 'Attente sur la paire']])}</div>` : ''}
+            ${structured ? `<div><span class="block text-[11px] text-slate-500 mb-1">Attente</span>${sel('wait', [['none', 'Autre / non précisée'], ['edge', 'Attente de bord (3 ou 7)'], ['closed', 'Attente au milieu d\'un chow'], ['single', 'Attente sur la paire']])}</div>` : ''}
             <div><span class="block text-[11px] text-slate-500 mb-1">Moment de la partie</span>${sel('lastTile', [['none', 'Normal'], ['draw', 'Dernière tuile du mur (Tsumo)'], ['claim', 'Dernière défausse (Ron)']])}</div>
-            ${chk('replacement', 'Tuile de remplacement après un carré (Tsumo)')}
-            ${chk('robbing', 'Vol de carré (Ron)')}
+            ${chk('replacement', 'Tuile de remplacement après un kong (Tsumo)')}
+            ${chk('robbing', 'Vol de kong (Ron)')}
             ${chk('lastCopy', 'Dernière tuile restante de sa sorte')}
         </div>`;
 }

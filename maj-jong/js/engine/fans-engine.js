@@ -203,7 +203,7 @@ function detectFans(hand, an, ctx) {
             if (m.id === ctx.prevalentWind) add('prevalentWind');
             if (m.id === ctx.seatWind) add('seatWind');
         });
-        // Brelans de bouts / vents (hors dragons, vents de place/dominant, et hors 3 vents ou plus)
+        // Pongs de bouts / vents (hors dragons, vents de place/dominant, et hors 3 vents ou plus)
         pungs.forEach(m => {
             if (isTerminal(m.id)) add('pungTerminalsOrHonors');
             else if (TILES[m.id].kind === 'wind' && m.id !== ctx.prevalentWind && m.id !== ctx.seatWind && windPungs.length < 3) add('pungTerminalsOrHonors');
@@ -217,7 +217,7 @@ function detectFans(hand, an, ctx) {
         if (!hasKnit && melds.every(meldHasFive) && tileRank(pair) === 5 && isSuited(pair)) add('allFives');
         if (!hasKnit && melds.every(meldIsOutside) && (isHonor(pair) || isTerminal(pair))) add('outsideHand');
 
-        // Brelans cachés / carrés
+        // Pongs cachés / kongs
         const concealedPungs = pungs.filter(m => !m.open).length;
         if (concealedPungs === 4) add('fourConcealedPungs');
         else if (concealedPungs === 3) add('threeConcealedPungs');
@@ -231,13 +231,13 @@ function detectFans(hand, an, ctx) {
         if (closedKongs === 2) add('twoConcealedKongs');
         if (openKongs === 2) add('twoMeldedKongs');
 
-        // Quatre en un (4 exemplaires sans carré)
+        // Quatre en un (4 exemplaires sans kong)
         const tc = {};
         tiles.forEach(t => { tc[t] = (tc[t] || 0) + 1; });
         const kongIds = kongs.map(m => m.id);
         add('tileHog', Object.keys(tc).filter(t => tc[t] === 4 && !kongIds.includes(t)).length);
 
-        // Brelans : décalés, triple, double
+        // Pongs : décalés, triple, double
         if (suitedPungs.length >= 3) {
             if (anyCombo(suitedPungs, 3, c => c.every(m => m.suit === c[0].suit) && isArithmetic(c.map(m => m.rank), [1]))) add('pureShiftedPungs');
             if (anyCombo(suitedPungs, 3, c => new Set(c.map(m => m.suit)).size === 3 && isArithmetic(c.map(m => m.rank), [1]))) add('mixedShiftedPungs');
@@ -248,7 +248,7 @@ function detectFans(hand, an, ctx) {
         suitedPungs.forEach(m => { pungRanks[m.rank] = (pungRanks[m.rank] || 0) + 1; });
         Object.values(pungRanks).forEach(n => { if (n === 2) add('doublePung'); });
 
-        // Suites
+        // Chows
         const key = m => m.suit + m.rank;
         const chowCount = {};
         chows.forEach(m => { chowCount[key(m)] = (chowCount[key(m)] || 0) + 1; });
@@ -358,7 +358,7 @@ function evaluateHand(hand, ctx, isWinner) {
         if (ctx.lastTile === 'draw' && !ctx.selfDrawn) result.warnings.push('« Dernière tuile du mur » demande une victoire par pioche (Tsumo).');
         if (ctx.lastTile === 'claim' && ctx.selfDrawn) result.warnings.push('« Dernière défausse » demande une victoire sur défausse (Ron).');
         if (ctx.replacement && !ctx.selfDrawn) result.warnings.push('« Tuile de remplacement » demande une victoire par pioche (Tsumo).');
-        if (ctx.robbing && ctx.selfDrawn) result.warnings.push('« Vol de carré » demande une victoire sur défausse (Ron).');
+        if (ctx.robbing && ctx.selfDrawn) result.warnings.push('« Vol de kong » demande une victoire sur défausse (Ron).');
     } else {
         entries = partialFans(hand, an, ctx);
         if (isWinner) result.status = an.errors.length ? 'invalid' : (hasTiles ? 'incomplete' : 'empty');

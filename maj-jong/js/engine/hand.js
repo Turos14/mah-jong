@@ -3,11 +3,14 @@
 // Les groupes dépendent du type de mah-jong (voir createHand).
 
 const GROUP_SIZE = { chow: 3, pung: 3, kong: 4, knit: 3, pair: 2, free: 14 };
-const GROUP_LABELS = { chow: 'Suite', pung: 'Brelan', kong: 'Carré', knit: 'Tressé', pair: 'Paire', free: 'Tuiles' };
+const GROUP_LABELS = { chow: 'Chow', pung: 'Pong', kong: 'Kong', knit: 'Tressé', pair: 'Paire', free: 'Tuiles' };
 const FLOWER_SLOTS = 8;
 
+// Les chows, pongs et kongs sont exposés par défaut (case « Exposé » cochée) ; on décoche
+// pour un groupe caché. `open` explicite (handFromSpec) est respecté tel quel.
 function makeGroup(kind, open) {
-    return { kind, open: !!open, tiles: new Array(GROUP_SIZE[kind]).fill(null) };
+    const isSet = kind === 'chow' || kind === 'pung' || kind === 'kong';
+    return { kind, open: open === undefined ? isSet : !!open, tiles: new Array(GROUP_SIZE[kind]).fill(null) };
 }
 
 function createHand(type) {
@@ -30,7 +33,7 @@ function createHand(type) {
     return { type, groups, flowers: new Array(FLOWER_SLOTS).fill(null) };
 }
 
-// Change le type d'un groupe (suite/brelan/carré) en conservant les tuiles déjà posées.
+// Change le type d'un groupe (chow/pong/kong) en conservant les tuiles déjà posées.
 function setGroupKind(group, kind) {
     const old = group.tiles;
     group.kind = kind;
@@ -39,7 +42,7 @@ function setGroupKind(group, kind) {
 
 // Construit une main à partir d'une description compacte, ex.
 // { t: 'standard', g: ['c:m1 m2 m3', 'po:we we we', ...], pr: 'p5 p5', fl: 'f1 a2' }
-// Lettres de groupe : c suite, p brelan, k carré, n tressé, x paire, f tuiles libres ; 'o' final = exposé.
+// Lettres de groupe : c chow, p pong, k kong, n tressé, x paire, f tuiles libres ; 'o' final = exposé.
 function handFromSpec(spec) {
     const letters = { c: 'chow', p: 'pung', k: 'kong', n: 'knit', x: 'pair', f: 'free' };
     const hand = { type: spec.t || 'standard', groups: [], flowers: new Array(FLOWER_SLOTS).fill(null) };
