@@ -35,7 +35,7 @@ Scripts share globals (top-level `const`/`function`), so **load order in `index.
 
 ## Tiles and hands
 
-Tile ids: `p1-p9` circles, `s1-s9` bamboos, `m1-m9` characters, `we ws ww wn` winds (E S W N), `dr dg dw` dragons (red, green, white), `f1-f4` flowers, `a1-a4` seasons. Max 4 copies per tile, 1 per flower (`maxCopies`).
+Tile ids: `p1-p9` circles, `s1-s9` bamboos, `m1-m9` characters, `we ws ww wn` winds (E S W N), `dr dg dw` dragons (red, green, white), `f1-f4` flowers, `a1-a4` seasons. Max 4 copies per tile, 1 per flower/season (`maxCopies`), **shared by all players of the round** (`countUsedAll` in `ui/tile-editor.js`; the engine only checks one hand at a time).
 
 A hand is `{ type, groups: [{ kind, open, tiles[] }], flowers[8] }`. `type` is one of `standard`, `knittedStraight`, `sevenPairs`, `orphans`, `knittedHonors` (see `HAND_TYPES`); `createHand(type)` builds the matching empty groups (chow/pung/kong/knit/pair/free slots). Only the winner can pick a non-standard type; other players are always standard and only score per-group fans (see below).
 

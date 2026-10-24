@@ -19,6 +19,12 @@ function ensureHandForRole(playerId) {
     }
 }
 
+// Les tuiles sont partagées entre tous les joueurs de la manche : 4 exemplaires de chaque
+// tuile (1 par fleur/saison) pour toute la table, pas par joueur.
+function countUsedAll(id) {
+    return gameState.players.reduce((n, p) => n + countUsed(currentCalcState.playerHands[p.id].hand, id), 0);
+}
+
 function firstEmptyHole(hand) {
     for (let g = 0; g < hand.groups.length; g++) {
         const i = hand.groups[g].tiles.indexOf(null);
@@ -38,7 +44,7 @@ function renderTray() {
     const hand = activeHand();
     strip.innerHTML = '';
     TILE_ORDER.forEach(id => {
-        const left = maxCopies(id) - countUsed(hand, id);
+        const left = maxCopies(id) - countUsedAll(id);
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `tray-tile${left <= 0 ? ' empty' : ''}`;
@@ -60,7 +66,7 @@ function renderTray() {
 
 function placeTile(id) {
     const hand = activeHand();
-    if (countUsed(hand, id) >= maxCopies(id)) return;
+    if (countUsedAll(id) >= maxCopies(id)) return;
     if (isBonus(id)) {
         const i = hand.flowers.indexOf(null);
         if (i < 0) return;
@@ -101,7 +107,7 @@ function dropOnHole(ev, g, i) {
     const hand = activeHand();
     const slot = hand.groups[g].tiles;
     const replaced = slot[i];
-    if (replaced !== id && countUsed(hand, id) >= maxCopies(id)) { onHandChanged(); return; }
+    if (replaced !== id && countUsedAll(id) >= maxCopies(id)) { onHandChanged(); return; }
     slot[i] = id;
     currentCalcState.cursor = firstEmptyHole(hand);
     onHandChanged();
@@ -111,7 +117,7 @@ function dropOnFlower(ev, i) {
     ev.preventDefault();
     const id = ev.dataTransfer.getData('text/plain');
     const hand = activeHand();
-    if (!TILES[id] || !isBonus(id) || countUsed(hand, id) >= 1) { onHandChanged(); return; }
+    if (!TILES[id] || !isBonus(id) || countUsedAll(id) >= maxCopies(id)) { onHandChanged(); return; }
     hand.flowers[i] = id;
     onHandChanged();
 }
