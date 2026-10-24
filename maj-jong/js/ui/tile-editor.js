@@ -245,6 +245,8 @@ function renderHandEditor() {
             ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropOnFlower(event, ${i})"
             aria-label="${t ? 'Retirer ' + TILES[t].label : 'Fleur ou saison'}">${t ? tileImg(t) : ''}</button>`).join('');
 
+    renderPhotoBar(entry);
+
     // Façon de gagner (gagnant seulement)
     const flagsBox = document.getElementById('hand-flags');
     if (!isWinner) { flagsBox.innerHTML = ''; return; }
@@ -263,4 +265,85 @@ function renderHandEditor() {
             ${chk('robbing', 'Vol de carré (Ron)')}
             ${chk('lastCopy', 'Dernière tuile restante de sa sorte')}
         </div>`;
+}
+
+// ---------- Photo des tuiles (simple aide visuelle, aucune reconnaissance) ----------
+// La photo est affichée en fond de l'éditeur de main du joueur ; elle reste en mémoire
+// pendant la manche et disparaît à l'enregistrement.
+
+function renderPhotoBar(entry) {
+    const card = document.getElementById('hand-editor-card');
+    const bar = document.getElementById('hand-photo-bar');
+    const photo = entry.photo;
+    applyPhotoBackground(card, photo);
+    const btn = 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-xl text-xs font-medium transition cursor-pointer';
+    if (!photo) {
+        bar.innerHTML = `
+            <div class="flex flex-wrap gap-2">
+                <label class="${btn}">📷 Prendre une photo de mes tuiles<input type="file" accept="image/*" capture="environment" class="hidden" onchange="onPhotoPicked(this)"></label>
+                <label class="${btn}">🖼️ Choisir une image<input type="file" accept="image/*" class="hidden" onchange="onPhotoPicked(this)"></label>
+            </div>`;
+        return;
+    }
+    bar.innerHTML = `
+        <div class="flex flex-wrap items-center gap-3">
+            <button onclick="openPhotoModal()" class="${btn}">🔍 Voir la photo en grand</button>
+            <label class="flex items-center gap-2 text-xs text-slate-400">Assombrir le fond
+                <input type="range" min="0" max="95" value="${Math.round(photo.dim * 100)}" oninput="setPhotoDim(this.value)" class="accent-emerald-500 w-28">
+            </label>
+            <button onclick="removePhoto()" class="${btn}">✖ Retirer</button>
+        </div>`;
+}
+
+function applyPhotoBackground(card, photo) {
+    if (photo) {
+        const a = photo.dim;
+        card.style.backgroundImage = `linear-gradient(rgba(15,23,42,${a}), rgba(15,23,42,${a})), url("${photo.src}")`;
+    } else {
+        card.style.backgroundImage = '';
+    }
+}
+
+function onPhotoPicked(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const entry = activeEntry();
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+        const max = 1280;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        entry.photo = { src: canvas.toDataURL('image/jpeg', 0.8), dim: 0.75 };
+        renderHandEditor();
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); alert("Impossible de lire cette image."); };
+    img.src = url;
+}
+
+function setPhotoDim(value) {
+    const entry = activeEntry();
+    if (!entry.photo) return;
+    entry.photo.dim = parseInt(value) / 100;
+    applyPhotoBackground(document.getElementById('hand-editor-card'), entry.photo);
+}
+
+function removePhoto() {
+    delete activeEntry().photo;
+    renderHandEditor();
+}
+
+function openPhotoModal() {
+    const entry = activeEntry();
+    if (!entry.photo) return;
+    document.getElementById('photo-modal-img').src = entry.photo.src;
+    document.getElementById('photo-modal').classList.remove('hidden');
+}
+
+function closePhotoModal() {
+    document.getElementById('photo-modal').classList.add('hidden');
 }

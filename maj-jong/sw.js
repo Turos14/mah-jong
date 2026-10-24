@@ -1,4 +1,4 @@
-const CACHE_NAME = 'majhong-v3';
+const CACHE_NAME = 'majhong-v4';
 const ASSETS = [
     './',
     './index.html',

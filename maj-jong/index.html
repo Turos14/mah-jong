@@ -199,12 +199,13 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                 <!-- Éditeur de main -->
-                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <div id="hand-editor-card" class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6 bg-cover bg-center">
                     <div class="flex justify-between items-center border-b border-slate-800 pb-3 gap-3">
                         <h3 class="text-base font-bold text-emerald-400" id="calc-current-player-title">Main</h3>
                         <span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-md whitespace-nowrap" id="calc-player-status-badge">Non-gagnant</span>
                     </div>
 
+                    <div id="hand-photo-bar"></div>
                     <div id="hand-type-container"></div>
                     <p class="text-xs text-slate-500">Touchez une tuile du bandeau (en bas) pour la poser dans le prochain trou, ou glissez-la sur un trou précis. Touchez une tuile posée pour la retirer.</p>
                     <div id="hand-groups" class="flex flex-wrap gap-4"></div>
@@ -271,6 +272,11 @@
     <!-- Bandeau de tuiles (affiché dans le calculateur) -->
     <div id="tile-dock" class="hidden">
         <div id="tile-dock-strip"></div>
+    </div>
+
+    <!-- Photo en grand -->
+    <div id="photo-modal" class="hidden fixed inset-0 bg-black/85 z-[110] flex items-center justify-center p-4" onclick="closePhotoModal()">
+        <img id="photo-modal-img" alt="Photo des tuiles" class="max-w-full max-h-full rounded-xl">
     </div>
 
     <!-- Modal de nommage (Sauvegarde / Nouvelle Partie) -->
