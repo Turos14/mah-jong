@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #121824;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #059669; }
+
+/* --- Tuiles --- */
+.tile-img { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+
+.tile-hole {
+    position: relative;
+    width: 44px;
+    aspect-ratio: 179 / 241;
+    flex: none;
+    border-radius: 7px;
+    border: 2px dashed #334155;
+    background: rgba(15, 23, 42, 0.6);
+    transition: border-color .15s, background .15s, transform .1s;
+    padding: 0;
+    cursor: pointer;
+}
+.tile-hole:hover { border-color: #059669; }
+.tile-hole.filled { border-style: solid; border-color: transparent; background: transparent; }
+.tile-hole.filled:hover { transform: translateY(-2px); }
+.tile-hole.cursor { border-color: #10b981; background: rgba(16, 185, 129, 0.15); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25); }
+.tile-hole.drag-over { border-color: #f59e0b; background: rgba(245, 158, 11, 0.2); }
+.tile-hole.bonus { width: 38px; }
+
+/* --- Bandeau de tuiles --- */
+#tile-dock {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 60;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid #065f46;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+}
+#tile-dock-strip {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+@media (min-width: 768px) {
+    #tile-dock-strip { flex-wrap: wrap; overflow-x: visible; max-height: 36vh; overflow-y: auto; justify-content: center; }
+}
+.tray-tile {
+    position: relative;
+    width: 46px;
+    flex: none;
+    cursor: grab;
+    border: 0;
+    background: none;
+    padding: 0;
+    transition: transform .1s, opacity .15s;
+    -webkit-tap-highlight-color: transparent;
+}
+.tray-tile:active { transform: scale(0.94); }
+.tray-tile.dragging { opacity: .4; }
+.tray-tile.empty { opacity: .25; cursor: not-allowed; filter: grayscale(1); }
+.tray-count {
+    position: absolute; right: 2px; bottom: 2px;
+    min-width: 16px; height: 16px; line-height: 16px;
+    font-size: 10px; font-weight: 700; text-align: center;
+    border-radius: 8px; background: rgba(2, 6, 23, 0.85); color: #6ee7b7;
+}
+.tile-sm { width: 30px; flex: none; }
+.tile-xs { width: 24px; flex: none; }
+
+/* La page laisse la place du bandeau quand le calculateur est affiché */
+body.dock-open main { padding-bottom: 150px; }
+@media (min-width: 768px) { body.dock-open main { padding-bottom: 36vh; } }

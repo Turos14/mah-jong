@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi & Calcul de Scores Maj-hong</title>
+    <meta name="theme-color" content="#10b981">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <!-- Tailwind CSS pour un design haut de gamme -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js pour le graphique d'évolution -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/app.css">
+</head>
+
+<body class="text-slate-100 min-h-screen">
+
+    <!-- En-tête principal -->
+    <header class="border-b border-emerald-900 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div
+                    class="bg-emerald-600 text-slate-950 p-2.5 rounded-xl font-bold text-xl tracking-wider shadow-lg shadow-emerald-900/20">
+                    🀄
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-emerald-400">Maj-hong Score Master</h1>
+                    <p class="text-xs text-slate-400">Mah-jong chinois officiel — comptage par tuiles</p>
+                </div>
+            </div>
+
+            <!-- Onglets Principaux -->
+            <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700 w-full sm:w-auto overflow-x-auto">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard"
+                    class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-emerald-600 text-slate-950">
+                    Partie & Graphique
+                </button>
+                <button onclick="switchTab('calculator')" id="tab-calculator"
+                    class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
+                    Calculateur de Manche
+                </button>
+                <button onclick="switchTab('rules')" id="tab-rules"
+                    class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
+                    Règles & Combinaisons
+                </button>
+                <button onclick="switchTab('parties')" id="tab-parties"
+                    class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
+                    Mes Parties
+                </button>
+            </div>
+
+            <button onclick="installApp()" id="install-button"
+                class="hidden flex items-center gap-1.5 text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-all duration-200 px-4 py-2 rounded-lg font-medium shadow-lg shadow-emerald-900/20">
+                ⬇️ Installer l'app
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+
+        <!-- VUE DASHBOARD (PARTIE & GRAPHIQUE) -->
+        <div id="view-dashboard" class="space-y-8">
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                            <span>👥</span> Configuration des Joueurs
+                        </h2>
+                        <p class="text-sm text-slate-400 mt-1">Configurez les noms des joueurs.</p>
+                        <p id="current-party-label" class="text-xs text-emerald-400 mt-1 font-medium">Partie non sauvegardée</p>
+                    </div>
+                    <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+                        <div class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                            <span class="text-xs text-slate-400">Nombre de Joueurs :</span>
+                            <select id="player-count"
+                                class="bg-transparent text-emerald-400 font-semibold focus:outline-none cursor-pointer"
+                                onchange="updatePlayerCount(this.value)">
+                                <option value="2">2 joueurs</option>
+                                <option value="3">3 joueurs</option>
+                                <option value="4" selected>4 joueurs</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-3 ml-auto flex-wrap">
+                            <button onclick="openSaveModal()"
+                                class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                                💾 Sauvegarder
+                            </button>
+                            <div class="relative">
+                                <button onclick="toggleLoadMenu(event)"
+                                    class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                                    📂 Charger
+                                </button>
+                                <div id="load-menu"
+                                    class="hidden absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto p-2 space-y-1">
+                                </div>
+                            </div>
+                            <button onclick="resetGame()"
+                                class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-4 py-2 rounded-xl text-sm font-medium transition duration-200">
+                                Réinitialiser la partie
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="player-inputs-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                </div>
+            </section>
+
+            <!-- Classement & Graphique -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-6">
+                            <span>🏆</span> Classement Actuel
+                        </h2>
+                        <div id="leaderboard-container" class="space-y-4"></div>
+                    </div>
+                    <button onclick="switchTab('calculator')"
+                        class="mt-6 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold px-6 py-3 rounded-xl shadow-lg transition duration-200 w-full">
+                        🧮 Enregistrer les scores
+                    </button>
+                </div>
+                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4">
+                        <span>📈</span> Évolution des Points
+                    </h2>
+                    <div class="flex-1 relative min-h-[280px]"><canvas id="progressionChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Historique des Manches -->
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>📜</span> Historique
+                        des Manches</h2>
+                    <span id="rounds-count"
+                        class="bg-slate-800 text-xs text-slate-400 px-3 py-1 rounded-full font-semibold">0 manche</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-sm">
+                                <th class="py-3 px-4">Manche</th>
+                                <th class="py-3 px-4">Est (Banque)</th>
+                                <th class="py-3 px-4">Gagnant</th>
+                                <th class="py-3 px-4">Type Victoire</th>
+                                <th class="py-3 px-4 text-center">Impacts sur les Scores</th>
+                                <th class="py-3 px-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rounds-history-body" class="divide-y divide-slate-800 text-sm"></tbody>
+                    </table>
+                    <div id="no-rounds-message" class="text-center py-8 text-slate-500">Aucune manche enregistrée.</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VUE CALCULATEUR DE MANCHE -->
+        <div id="view-calculator" class="hidden space-y-6">
+
+            <!-- Contexte de la manche -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Vent d'Est (Banquier)</label>
+                    <select id="calc-est" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" onchange="onContextChange()"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Vent dominant</label>
+                    <select id="calc-prevalent" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" onchange="onContextChange()">
+                        <option value="we">Est</option>
+                        <option value="ws">Sud</option>
+                        <option value="ww">Ouest</option>
+                        <option value="wn">Nord</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Gagnant (Mah-Jong)</label>
+                    <select id="calc-winner" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" onchange="onContextChange()"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Méthode de Victoire</label>
+                    <select id="calc-method" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" onchange="onContextChange()">
+                        <option value="tsumo">Tsumo (Pioche du mur)</option>
+                        <option value="ron">Ron (Sur une défausse)</option>
+                    </select>
+                </div>
+                <div id="calc-discarder-container" class="hidden">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Qui a défaussé ?</label>
+                    <select id="calc-discarder" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" onchange="onContextChange()"></select>
+                </div>
+            </div>
+
+            <!-- Sous-onglets : un joueur par onglet -->
+            <div class="flex bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 overflow-x-auto gap-1" id="player-subtabs-container"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- Éditeur de main -->
+                <div class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3 gap-3">
+                        <h3 class="text-base font-bold text-emerald-400" id="calc-current-player-title">Main</h3>
+                        <span class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-md whitespace-nowrap" id="calc-player-status-badge">Non-gagnant</span>
+                    </div>
+
+                    <div id="hand-type-container"></div>
+                    <p class="text-xs text-slate-500">Touchez une tuile du bandeau (en bas) pour la poser dans le prochain trou, ou glissez-la sur un trou précis. Touchez une tuile posée pour la retirer.</p>
+                    <div id="hand-groups" class="flex flex-wrap gap-4"></div>
+
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-1.5">🌸 Fleurs et saisons (1 point chacune)</h4>
+                        <div id="hand-flowers" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div id="hand-flags"></div>
+                </div>
+
+                <!-- Panneau latéral de synthèse -->
+                <div class="space-y-6">
+                    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+                        <h3 class="text-xs font-semibold uppercase tracking-widest text-slate-400">Combinaisons de cette main</h3>
+                        <div id="hand-result" class="text-sm space-y-2"></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-900 to-emerald-950 border border-emerald-900/50 rounded-2xl p-6 shadow-xl space-y-4">
+                        <h3 class="text-xs font-semibold uppercase tracking-widest text-emerald-400 text-center">Bilan de la Donne</h3>
+                        <div class="divide-y divide-slate-800/60 text-sm space-y-3 pt-2" id="side-summary-balances"></div>
+                        <hr class="border-slate-800 my-4">
+                        <button onclick="saveCalculatedRound()"
+                            class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-4 rounded-xl shadow-lg transition duration-200">
+                            💾 Enregistrer la Manche
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VUE RÈGLES & COMBINAISONS -->
+        <div id="view-rules" class="hidden space-y-8">
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+                <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>📖</span> Règles & Combinaisons</h2>
+                <div id="rules-intro" class="text-sm text-slate-400 space-y-2"></div>
+            </section>
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <h2 class="text-base font-semibold text-slate-200">Les façons de faire Mah-jong</h2>
+                <div id="rules-types" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </section>
+            <div id="rules-fans" class="space-y-8"></div>
+        </div>
+
+        <!-- VUE MES PARTIES -->
+        <div id="view-parties" class="hidden space-y-6">
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>🗂️</span> Mes Parties</h2>
+                        <p class="text-sm text-slate-400 mt-1">Créez, chargez ou supprimez vos parties sauvegardées sur cet appareil.</p>
+                    </div>
+                    <button onclick="openCreatePartyModal()"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold px-4 py-2.5 rounded-xl shadow-lg transition duration-200 whitespace-nowrap">
+                        ➕ Nouvelle partie
+                    </button>
+                </div>
+                <div id="parties-list-container" class="space-y-3"></div>
+                <div id="no-parties-message" class="hidden text-center py-8 text-slate-500">Aucune partie sauvegardée pour le moment.</div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Bandeau de tuiles (affiché dans le calculateur) -->
+    <div id="tile-dock" class="hidden">
+        <div id="tile-dock-strip"></div>
+    </div>
+
+    <!-- Modal de nommage (Sauvegarde / Nouvelle Partie) -->
+    <div id="name-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+            <h3 id="name-modal-title" class="text-lg font-semibold text-emerald-400">Sauvegarder la partie</h3>
+            <input id="name-modal-input" type="text" placeholder="Nom de la partie"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                onkeydown="if(event.key==='Enter') confirmNameModal()">
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeNameModal()"
+                    class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">Annuler</button>
+                <button onclick="confirmNameModal()"
+                    class="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950 transition">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data/tiles.js"></script>
+    <script src="js/data/fans.js"></script>
+    <script src="js/engine/hand.js"></script>
+    <script src="js/engine/fans-engine.js"></script>
+    <script src="js/engine/payout.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/ui/dashboard.js"></script>
+    <script src="js/ui/tile-editor.js"></script>
+    <script src="js/ui/calculator.js"></script>
+    <script src="js/ui/rules.js"></script>
+    <script src="js/ui/parties.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
