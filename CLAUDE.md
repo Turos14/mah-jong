@@ -4,19 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-file French-language web app for tracking Mahjong (Mah-jong / "Maj-hong") game scores, with a built-in hand-value calculator for a traditional multi-player scoring system. The entire app — markup, styling, and logic — lives in `maj-jong/index.html`. There is no build step, no package manager, and (currently) no git repository initialized.
+A single-file French-language web app for tracking Mahjong (Mah-jong / "Maj-hong") game scores, with a built-in hand-value calculator for a traditional multi-player scoring system. The entire app — markup, styling, and logic — lives in `maj-jong/index.html`. There is no build step and no package manager.
 
 Dependencies are loaded from CDN directly in `<head>`: Tailwind CSS (`cdn.tailwindcss.com`) for styling and Chart.js for the score-progression chart. There is no bundler, transpiler, or test suite.
 
 ## Running / developing
 
-Open `maj-jong/index.html` directly in a browser (or serve the `maj-jong/` directory with any static file server). Changes take effect on reload — no build or compile step. There are no lint or test commands configured in this project.
+Serve the `maj-jong/` directory with any static file server, e.g. `python3 -m http.server -d maj-jong 8000`, then open `http://localhost:8000/`. Opening `index.html` via `file://` works for the app itself, but the service worker only registers over http(s)/localhost. Changes take effect on reload — but once the service worker is installed it serves cached files, so use a hard reload / "Bypass for network" in DevTools while developing. There are no lint or test commands configured in this project.
+
+### Deployment
+
+`.github/workflows/deploy.yml` publishes the `maj-jong/` directory (only that directory) to GitHub Pages on every push to `main`. Anything outside `maj-jong/` is not deployed.
 
 ## Architecture
 
 Everything is driven by two global, in-memory state objects defined at the top of the `<script>` block:
 
 - `gameState` — the persisted game: `playerCount`, `startingPoints`, `players` (each with `id`, `name`, and a `scores` array that is one longer than `rounds` — index 0 is the starting score), and `rounds` (history of completed hands, each storing the winner, the "Est"/dealer, victory method, and per-player point `impacts`).
+  `rounds[].impacts` is the source of truth: `recalculateScores()` rebuilds every player's `scores` array from `startingPoints` + the impacts, and is called after adding or deleting a round. Don't mutate `scores` directly.
 - `currentCalcState` — transient UI state for the hand calculator: which player's tab is active, who is Est (dealer) and winner, the victory method (`tsumo`/`ron`), the discarder (for `ron`), and `playerHands` — a per-player breakdown of selected scoring-matrix entries.
 
 Scoring rules are declaratively encoded in `MATRIX_SCHEMA` (base combinations, general multipliers/doublons, winner-only fixed bonuses, and winner-only final multipliers). `renderMatrixForm()` generates the input grid directly from this schema, so **adding or changing a scoring rule means editing `MATRIX_SCHEMA`**, not the render function.
