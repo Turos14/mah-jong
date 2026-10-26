@@ -60,6 +60,10 @@ No framework: after mutating state call the relevant `render*()`/`update*()` (`i
 
 Saved games live in `localStorage` under `majhong_parties_v1` as `{ id, name, updatedAt, gameState }`; old saves with the legacy fields (`startingPoints`, rounds without `winnerHand`) still load.
 
+## Compteur multi-jeux (tab `view-counter`)
+
+A generic score counter, independent of the Mahjong state: `engine/counter.js` (pure, tested) + `ui/counter.js`. A **game** holds settings (`minPlayers`/`maxPlayers` ≤ 12, `scoring` `all`|`winner`, `lowestWins`, `startingPoints`, `targetScore` = end-of-game score); a **session** embeds a copy of its game plus `players[]` (names) and `rounds[] = { winner: index|null, points[] }` — `points` is the source of truth, cumulative scores come from `counterHistory()`. `buildCounterRound()` validates the input (winner mode keeps only the winner's points; commas accepted as decimals). Editing a game propagates its settings to its sessions; deleting it keeps them. Sessions autosave on every change (`persistCounterSession()`) in `localStorage` keys `majhong_counter_games_v1`, `majhong_counter_sessions_v1`, `majhong_counter_current_v1`. The player count locks once a round exists.
+
 ## PWA / deployment
 
 `sw.js` is a cache-first service worker with an explicit `ASSETS` list. **When you add, rename or change any cached file (HTML, CSS, JS, tiles, icons, manifest), update `ASSETS` if the file is new and bump `CACHE_NAME`** — otherwise installed clients keep serving the stale version. iOS has no install prompt (manual "Add to Home Screen").
