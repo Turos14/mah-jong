@@ -68,7 +68,10 @@ function buildCounterRound(game, playerCount, winner, rawPoints) {
     if (w !== null && (w < 0 || w >= playerCount)) errors.push('Gagnant invalide.');
     if (game.scoring === 'winner' && w === null) errors.push('Choisissez le gagnant.');
 
-    const parse = v => (v === '' || v === null || v === undefined) ? 0 : Number(v);
+    const parse = v => {
+        const str = v === null || v === undefined ? '' : String(v).trim().replace(',', '.');
+        return str === '' ? 0 : Number(str);
+    };
     let points = Array.from({ length: playerCount }, (_, i) => parse(rawPoints[i]));
     if (game.scoring === 'winner') points = points.map((p, i) => i === w ? p : 0);
     if (points.some(p => !Number.isFinite(p))) errors.push('Les points doivent être des nombres.');

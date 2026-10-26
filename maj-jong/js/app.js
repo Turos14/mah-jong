@@ -1,11 +1,12 @@
 // --- INITIALISATION, ONGLETS, PWA ---
 
-const TAB_IDS = ['dashboard', 'calculator', 'rules', 'parties'];
+const TAB_IDS = ['dashboard', 'calculator', 'counter', 'rules', 'parties'];
 
 window.addEventListener('DOMContentLoaded', () => {
     resetCurrentCalcState();
     renderRules();
     initGame();
+    initCounter();
 });
 
 function initGame() {
@@ -40,6 +41,8 @@ function switchTab(tabId) {
         setTimeout(() => { if (chartInstance) chartInstance.update(); }, 40);
     } else if (tabId === 'calculator') {
         refreshCalculator();
+    } else if (tabId === 'counter') {
+        setTimeout(() => { if (counterChartInstance) counterChartInstance.resize(); }, 40);
     } else if (tabId === 'parties') {
         renderPartiesList();
     }

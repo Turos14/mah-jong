@@ -43,6 +43,10 @@
                     class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
                     Calculateur de Manche
                 </button>
+                <button onclick="switchTab('counter')" id="tab-counter"
+                    class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
+                    Compteur
+                </button>
                 <button onclick="switchTab('rules')" id="tab-rules"
                     class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
                     Règles & Combinaisons
@@ -267,6 +271,71 @@
                 <div id="no-parties-message" class="hidden text-center py-8 text-slate-500">Aucune partie sauvegardée pour le moment.</div>
             </section>
         </div>
+
+        <!-- VUE COMPTEUR MULTI-JEUX -->
+        <div id="view-counter" class="hidden space-y-6">
+            <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>🎲</span> Compteur de points</h2>
+                        <p class="text-sm text-slate-400 mt-1">Pour n'importe quel jeu : choisissez le jeu, les joueurs, puis saisissez chaque manche.</p>
+                        <p id="counter-session-label" class="text-xs text-emerald-400 mt-1 font-medium truncate"></p>
+                    </div>
+                    <div class="flex gap-2 flex-wrap shrink-0">
+                        <button onclick="openCounterNewSession()"
+                            class="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold px-4 py-2.5 rounded-xl shadow-lg transition whitespace-nowrap">➕ Nouvelle partie</button>
+                        <button id="counter-rematch-btn" onclick="counterRematch()"
+                            class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-4 py-2.5 rounded-xl text-sm font-medium transition whitespace-nowrap">🔁 Revanche</button>
+                    </div>
+                </div>
+                <div id="counter-setup" class="mt-6"></div>
+                <div id="counter-empty" class="text-center py-6 text-slate-500 text-sm">Aucune partie ouverte. Créez-en une ou ouvrez une partie sauvegardée ci-dessous.</div>
+            </section>
+
+            <div id="counter-play" class="hidden space-y-6">
+                <div id="counter-target-banner" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-2xl px-5 py-3 text-sm font-medium"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4"><span>✍️</span> Nouvelle manche</h2>
+                        <div id="counter-round-form"></div>
+                    </section>
+                    <section class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col">
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4"><span>📈</span> Évolution des points</h2>
+                        <div class="flex-1 relative min-h-[280px]"><canvas id="counterChart"></canvas></div>
+                    </section>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4"><span>🏆</span> Classement</h2>
+                        <div id="counter-leaderboard" class="space-y-3"></div>
+                    </section>
+                    <section class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>📜</span> Manches</h2>
+                            <span id="counter-rounds-count" class="bg-slate-800 text-xs text-slate-400 px-3 py-1 rounded-full font-semibold"></span>
+                        </div>
+                        <div id="counter-history" class="overflow-x-auto"></div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-1"><span>🗂️</span> Parties sauvegardées</h2>
+                    <p class="text-xs text-slate-500 mb-4">Chaque partie est enregistrée automatiquement sur cet appareil.</p>
+                    <div id="counter-sessions-list" class="space-y-3"></div>
+                </section>
+                <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <div class="flex justify-between items-start gap-3 mb-1">
+                        <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2"><span>⚙️</span> Mes jeux</h2>
+                        <button onclick="openCounterGameModal()"
+                            class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-sm font-medium transition whitespace-nowrap">➕ Nouveau jeu</button>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-4">Nombre de joueurs, qui marque, sens du classement, score de départ et de fin.</p>
+                    <div id="counter-games-list" class="space-y-3"></div>
+                </section>
+            </div>
+        </div>
     </main>
 
     <!-- Bandeau de tuiles (affiché dans le calculateur) -->
@@ -295,11 +364,82 @@
         </div>
     </div>
 
+    <!-- Modale : nouvelle partie du compteur -->
+    <div id="counter-session-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+            <h3 class="text-lg font-semibold text-emerald-400">Nouvelle partie</h3>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nom de la partie</label>
+                <input id="cs-name" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Jeu</label>
+                <select id="cs-game" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500" onchange="onCounterSessionGameChange()"></select>
+                <p id="cs-game-summary" class="text-[11px] text-slate-500 mt-1"></p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nombre de joueurs</label>
+                <input id="cs-players" type="number" inputmode="numeric" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeCounterSessionModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">Annuler</button>
+                <button onclick="confirmCounterSessionModal()" class="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950 transition">Commencer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale : paramètres d'un jeu du compteur -->
+    <div id="counter-game-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4 max-h-full overflow-y-auto">
+            <h3 id="cg-title" class="text-lg font-semibold text-emerald-400">Nouveau jeu</h3>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nom du jeu</label>
+                <input id="cg-name" type="text" placeholder="Ex. Tarot, Skyjo, Uno…" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Joueurs min</label>
+                    <input id="cg-min" type="number" inputmode="numeric" min="1" max="12" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Joueurs max</label>
+                    <input id="cg-max" type="number" inputmode="numeric" min="1" max="12" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Qui marque des points ?</label>
+                <select id="cg-scoring" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+                    <option value="all">Tous les joueurs marquent</option>
+                    <option value="winner">Seul le gagnant marque</option>
+                </select>
+            </div>
+            <label class="flex items-center gap-2 text-sm text-slate-300">
+                <input id="cg-lowest" type="checkbox" class="w-4 h-4 accent-emerald-500"> Le plus petit score gagne
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Score de départ</label>
+                    <input id="cg-start" type="number" inputmode="numeric" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Fin de partie à</label>
+                    <input id="cg-target" type="number" inputmode="numeric" placeholder="Aucune" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+            <p id="cg-error" class="hidden text-xs text-rose-400"></p>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeCounterGameModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">Annuler</button>
+                <button onclick="confirmCounterGameModal()" class="px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950 transition">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/data/tiles.js"></script>
     <script src="js/data/fans.js"></script>
     <script src="js/engine/hand.js"></script>
     <script src="js/engine/fans-engine.js"></script>
     <script src="js/engine/payout.js"></script>
+    <script src="js/engine/counter.js"></script>
     <script src="js/state.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/ui/dashboard.js"></script>
@@ -307,6 +447,7 @@
     <script src="js/ui/calculator.js"></script>
     <script src="js/ui/rules.js"></script>
     <script src="js/ui/parties.js"></script>
+    <script src="js/ui/counter.js"></script>
     <script src="js/app.js"></script>
 </body>
 

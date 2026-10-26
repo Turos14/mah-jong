@@ -24,3 +24,24 @@ function escapeHtml(str) {
     div.textContent = str;
     return div.innerHTML;
 }
+
+// --- COMPTEUR MULTI-JEUX ---
+// Jeux (paramètres), parties du compteur, et id de la partie ouverte.
+const COUNTER_GAMES_KEY = 'majhong_counter_games_v1';
+const COUNTER_SESSIONS_KEY = 'majhong_counter_sessions_v1';
+const COUNTER_CURRENT_KEY = 'majhong_counter_current_v1';
+
+function loadJson(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
+
+function saveJson(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) { }
+}
