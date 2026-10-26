@@ -1,4 +1,4 @@
-const CACHE_NAME = 'majhong-v6';
+const CACHE_NAME = 'majhong-v7';
 const ASSETS = [
     './',
     './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
     './js/engine/hand.js',
     './js/engine/fans-engine.js',
     './js/engine/payout.js',
+    './js/engine/counter.js',
     './js/state.js',
     './js/storage.js',
     './js/ui/dashboard.js',
@@ -16,6 +17,7 @@ const ASSETS = [
     './js/ui/calculator.js',
     './js/ui/rules.js',
     './js/ui/parties.js',
+    './js/ui/counter.js',
     './js/app.js',
     './icons/icon-192.png',
     './icons/icon-512.png',

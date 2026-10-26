@@ -7,11 +7,12 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..', 'maj-jong', 'js');
-const files = ['data/tiles.js', 'data/fans.js', 'engine/hand.js', 'engine/fans-engine.js', 'engine/payout.js'];
+const files = ['data/tiles.js', 'data/fans.js', 'engine/hand.js', 'engine/fans-engine.js', 'engine/payout.js', 'engine/counter.js'];
 const code = files.map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
 const ctx = vm.createContext({});
-vm.runInContext(code + '\nthis.api = { FANS, HAND_TYPES, TILES, handFromSpec, createHand, evaluateHand, DEFAULT_CTX, computePayout, seatWindOf, WIND_IDS };', ctx);
+vm.runInContext(code + '\nthis.api = { FANS, HAND_TYPES, TILES, handFromSpec, createHand, evaluateHand, DEFAULT_CTX, computePayout, seatWindOf, WIND_IDS, makeCounterGame, makeCounterSession, buildCounterRound, counterHistory, counterRanking, counterTargetReached, clampPlayerCount };', ctx);
 const { FANS, TILES, handFromSpec, createHand, evaluateHand, DEFAULT_CTX, computePayout, seatWindOf } = ctx.api;
+const { makeCounterGame, makeCounterSession, buildCounterRound, counterHistory, counterRanking, counterTargetReached, clampPlayerCount } = ctx.api;
 
 let failures = 0;
 function check(name, cond, detail) {
@@ -79,6 +80,28 @@ const players = [0, 1, 2, 3].map(id => ({ id }));
 const deltas = computePayout(players, { 0: 24, 1: 3, 2: 0, 3: 5 }, { winnerId: 0, estId: 1, method: 'ron', discarderId: 2, playerCount: 4 });
 check('Transferts de somme nulle', Object.values(deltas).reduce((a, b) => a + b, 0) === 0, JSON.stringify(deltas));
 check('Gagnant positif', deltas[0] > 0);
+
+// 9. Compteur multi-jeux
+const g = makeCounterGame({ name: 'Test', minPlayers: 5, maxPlayers: 3 });
+check('Compteur : max >= min', g.minPlayers === 5 && g.maxPlayers === 5);
+check('Compteur : nombre de joueurs borné', clampPlayerCount(makeCounterGame({ minPlayers: 2, maxPlayers: 4 }), 9) === 4);
+const wGame = makeCounterGame({ scoring: 'winner', minPlayers: 2, maxPlayers: 6 });
+let b = buildCounterRound(wGame, 3, null, ['5', '', '']);
+check('Compteur gagnant seul : gagnant obligatoire', b.errors.length > 0);
+b = buildCounterRound(wGame, 3, 1, ['7', '12', '3']);
+check('Compteur gagnant seul : les autres marquent 0', b.round && b.round.points.join() === '0,12,0', JSON.stringify(b));
+const aGame = makeCounterGame({ scoring: 'all', startingPoints: 10, targetScore: 20 });
+b = buildCounterRound(aGame, 2, null, ['', '']);
+check('Compteur tous : manche vide refusée', b.errors.length > 0);
+b = buildCounterRound(aGame, 2, null, ['abc', '1']);
+check('Compteur tous : points non numériques refusés', b.errors.length > 0);
+const sess = makeCounterSession(aGame, 'S', 2);
+sess.rounds.push(buildCounterRound(aGame, 2, 0, ['8', '-3']).round, buildCounterRound(aGame, 2, 1, ['4', '6']).round);
+check('Compteur : historique cumulé avec départ', JSON.stringify(counterHistory(sess)) === '[[10,10],[18,7],[22,13]]', JSON.stringify(counterHistory(sess)));
+check('Compteur : classement', counterRanking(sess)[0].index === 0 && counterRanking(sess)[0].wins === 1);
+check('Compteur : objectif atteint', counterTargetReached(sess).join() === '0');
+sess.game.lowestWins = true;
+check('Compteur : le plus petit score gagne', counterRanking(sess)[0].index === 1);
 
 console.log(failures === 0 ? 'Tous les tests passent.' : `${failures} échec(s).`);
 process.exit(failures ? 1 : 0);

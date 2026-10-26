@@ -56,9 +56,13 @@ A hand is `{ type, groups: [{ kind, open, tiles[] }], flowers[8] }`. `type` is o
 
 `gameState` (players, `scores`, `rounds`) is persisted; `rounds[].impacts` is the source of truth and `recalculateScores()` rebuilds every `scores` array from it — never mutate `scores` directly. `currentCalcState` is transient calculator state (`playerHands[id] = { hand, flags }`, context, `cursor` = next hole to fill).
 
-No framework: after mutating state call the relevant `render*()`/`update*()` (`initGame()` re-renders everything; tile edits go through `onHandChanged()`; context changes through `onContextChange()`). The four views (`view-dashboard|calculator|rules|parties`) are toggled by `switchTab()`; the tile dock (`#tile-dock`) is only shown on the calculator tab. The Règles page is generated from `data/fans.js` by `renderRules()`.
+No framework: after mutating state call the relevant `render*()`/`update*()` (`initGame()` re-renders everything; tile edits go through `onHandChanged()`; context changes through `onContextChange()`). The app opens on a home screen (`view-home`) with two modes, routed by the URL hash in `app.js` (`openMode()`, `goHome()`, `routeFromHash()`; `#mahjong`, `#compteur`, so the phone's back button returns home). The Mah-jong mode has four tabs (`view-dashboard|calculator|rules|parties`, bar `#mahjong-tabs`) toggled by `switchTab()`; all views go through `showView()`. The tile dock (`#tile-dock`) is only shown on the calculator tab. The Règles page is generated from `data/fans.js` by `renderRules()`.
 
 Saved games live in `localStorage` under `majhong_parties_v1` as `{ id, name, updatedAt, gameState }`; old saves with the legacy fields (`startingPoints`, rounds without `winnerHand`) still load.
+
+## Compteur multi-jeux (mode `#compteur`, `view-counter`)
+
+A generic score counter, independent of the Mahjong state: `engine/counter.js` (pure, tested) + `ui/counter.js`. A **game** holds settings (`minPlayers`/`maxPlayers` ≤ 12, `scoring` `all`|`winner`, `lowestWins`, `startingPoints`, `targetScore` = end-of-game score); a **session** embeds a copy of its game plus `players[]` (names) and `rounds[] = { winner: index|null, points[] }` — `points` is the source of truth, cumulative scores come from `counterHistory()`. `buildCounterRound()` validates the input (winner mode keeps only the winner's points; commas accepted as decimals). Editing a game propagates its settings to its sessions; deleting it keeps them. Sessions autosave on every change (`persistCounterSession()`) in `localStorage` keys `majhong_counter_games_v1`, `majhong_counter_sessions_v1`, `majhong_counter_current_v1`. The player count locks once a round exists.
 
 ## PWA / deployment
 
