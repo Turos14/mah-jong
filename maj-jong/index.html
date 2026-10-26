@@ -23,18 +23,22 @@
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
 
             <div class="flex items-center gap-3 w-full sm:w-auto">
-                <div
+                <button onclick="goHome()" title="Accueil"
                     class="bg-emerald-600 text-slate-950 p-2.5 rounded-xl font-bold text-xl tracking-wider shadow-lg shadow-emerald-900/20">
                     🀄
+                </button>
+                <div class="min-w-0">
+                    <h1 class="text-lg sm:text-xl font-bold text-emerald-400 truncate">Maj-hong Score Master</h1>
+                    <p id="header-subtitle" class="text-xs text-slate-400 truncate">Choisissez un mode</p>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold text-emerald-400">Maj-hong Score Master</h1>
-                    <p class="text-xs text-slate-400">Mah-jong chinois officiel — comptage par tuiles</p>
-                </div>
+                <button onclick="goHome()" id="home-button"
+                    class="hidden ml-auto sm:ml-4 shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-xl text-sm font-medium transition">
+                    ← Accueil
+                </button>
             </div>
 
-            <!-- Onglets Principaux -->
-            <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700 w-full sm:w-auto overflow-x-auto">
+            <!-- Onglets du mode Mah-jong -->
+            <div id="mahjong-tabs" class="hidden flex bg-slate-800 p-1 rounded-xl border border-slate-700 w-full sm:w-auto overflow-x-auto">
                 <button onclick="switchTab('dashboard')" id="tab-dashboard"
                     class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-emerald-600 text-slate-950">
                     Partie & Graphique
@@ -42,10 +46,6 @@
                 <button onclick="switchTab('calculator')" id="tab-calculator"
                     class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
                     Calculateur de Manche
-                </button>
-                <button onclick="switchTab('counter')" id="tab-counter"
-                    class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
-                    Compteur
                 </button>
                 <button onclick="switchTab('rules')" id="tab-rules"
                     class="flex-1 sm:flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 text-slate-400 hover:text-slate-200">
@@ -66,8 +66,31 @@
 
     <main class="max-w-7xl mx-auto px-4 py-8">
 
+        <!-- VUE ACCUEIL (choix du mode) -->
+        <div id="view-home" class="max-w-xl mx-auto space-y-4 sm:pt-6">
+            <p class="text-center text-sm text-slate-400 pb-2">Que voulez-vous compter ?</p>
+            <button onclick="openMode('mahjong')" class="w-full group flex items-center gap-4 text-left bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800 hover:border-emerald-600 rounded-2xl p-5 sm:p-6 shadow-xl transition duration-200">
+                <span class="shrink-0 w-16 h-16 rounded-2xl bg-emerald-600/15 border border-emerald-500/20 flex items-center justify-center text-4xl">🀄</span>
+                <span class="min-w-0 flex-1">
+                    <span class="block text-xl font-bold text-emerald-400">Mah-jong</span>
+                    <span class="block text-sm text-slate-400 mt-0.5">Saisie des mains par tuiles, 81 combinaisons officielles et calcul des paiements.</span>
+                    <span id="home-mahjong-status" class="block text-xs text-emerald-400/80 mt-1.5 truncate"></span>
+                </span>
+                <span class="text-3xl text-slate-600 group-hover:text-emerald-400 transition">›</span>
+            </button>
+            <button onclick="openMode('counter')" class="w-full group flex items-center gap-4 text-left bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800 hover:border-emerald-600 rounded-2xl p-5 sm:p-6 shadow-xl transition duration-200">
+                <span class="shrink-0 w-16 h-16 rounded-2xl bg-emerald-600/15 border border-emerald-500/20 flex items-center justify-center text-4xl">🎲</span>
+                <span class="min-w-0 flex-1">
+                    <span class="block text-xl font-bold text-emerald-400">Compteur</span>
+                    <span class="block text-sm text-slate-400 mt-0.5">Pour tous les jeux : gagnant et points de chaque manche, graphique et parties sauvegardées.</span>
+                    <span id="home-counter-status" class="block text-xs text-emerald-400/80 mt-1.5 truncate"></span>
+                </span>
+                <span class="text-3xl text-slate-600 group-hover:text-emerald-400 transition">›</span>
+            </button>
+        </div>
+
         <!-- VUE DASHBOARD (PARTIE & GRAPHIQUE) -->
-        <div id="view-dashboard" class="space-y-8">
+        <div id="view-dashboard" class="hidden space-y-8">
             <section class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                     <div>
