@@ -31,13 +31,15 @@ Scripts share globals (top-level `const`/`function`), so **load order in `index.
 ## Commands
 
 - Run the app: `python3 -m http.server -d maj-jong 8000` then open `http://localhost:8000/` (the service worker only registers over http/localhost). Once installed, the service worker serves cached files — hard-reload or use DevTools "Bypass for network".
-- Tests: `node tests/engine.test.js`. They check the official value tiers (1…88, no 5), that all 81 fans exist, that every fan example in `data/fans.js` is a valid complete hand containing its own fan, and a few exclusion/payout cases. There is no linter.
+- Tests: `node tests/engine.test.js`. They check the official value tiers (1…88, no 5), that all 81 fans exist, that every fan example in `data/fans.js` is a valid complete hand containing its own fan, and a few exclusion/payout cases. It prints only failures (`ÉCHEC …`) then « Tous les tests passent. »; there is no test framework or per-test filter — to debug one hand, add a temporary `check(...)` in the file or load the same `vm` context as the test does and call `evaluateHand(handFromSpec(spec), DEFAULT_CTX, true)` directly. There is no linter.
 
 ## Tiles and hands
 
 Tile ids: `p1-p9` circles, `s1-s9` bamboos, `m1-m9` characters, `we ws ww wn` winds (E S W N), `dr dg dw` dragons (red, green, white), `f1-f4` flowers, `a1-a4` seasons. Max 4 copies per tile, 1 per flower/season (`maxCopies`), **shared by all players of the round** (`countUsedAll` in `ui/tile-editor.js`; the engine only checks one hand at a time).
 
 UI vocabulary is Pong / Chow / Kong (internal kinds stay `pung`/`chow`/`kong`). Chow/pong/kong groups are **exposed by default** (`makeGroup` in `engine/hand.js`); the user unticks « Exposé » for concealed groups, which matters for concealed-hand fans. `handFromSpec` keeps its explicit `o` suffix semantics (no suffix = concealed).
+
+`handFromSpec` (used by fan examples `ex` and the tests) takes `{ t?, g: ['<kind>[o]:<tiles>'], pr?, fl? }`: kind letter `c` chow, `p` pung, `k` kong, `n` knit, `x` pair, `f` free; trailing `o` = exposed; `pr` = the pair; `fl` = flowers/seasons; tiles space-separated. Example: `{ g: ['po:dr dr dr', 'c:m1 m2 m3', …], pr: 'p9 p9' }`.
 
 A hand is `{ type, groups: [{ kind, open, tiles[] }], flowers[8] }`. `type` is one of `standard`, `knittedStraight`, `sevenPairs`, `orphans`, `knittedHonors` (see `HAND_TYPES`); `createHand(type)` builds the matching empty groups (chow/pung/kong/knit/pair/free slots). Only the winner can pick a non-standard type; other players are always standard and only score per-group fans (see below).
 
